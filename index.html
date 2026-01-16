@@ -94,28 +94,42 @@
 
     function applyFilters() { for(let i=1; i<=7; i++) updateShips(i); }
 
-    function updateShips(id) {
-        const name = document.getElementById(`p-${id}`).value;
-        const tierF = document.getElementById('filter-tier').value;
-        const classF = document.getElementById('filter-class').value;
-        const shipSel = document.getElementById(`s-${id}`);
-        shipSel.innerHTML = '<option value="">Select Ship</option>';
+   function updateShips(id) {
+    const name = document.getElementById(`p-${id}`).value;
+    const tierF = document.getElementById('filter-tier').value;
+    const classF = document.getElementById('filter-class').value;
+    const shipSel = document.getElementById(`s-${id}`);
+    
+    shipSel.innerHTML = '<option value="">Select Ship</option>';
 
-        if(name === "Select Player") return;
+    if(name === "Select Player" || !name) return;
 
-        db.players.filter(p => p[0] === name).forEach(p => {
-            const shipInfo = db.library[p[1]];
-            if (shipInfo) {
-                if (tierF !== "All" && shipInfo.tier != tierF) return;
-                if (classF !== "All" && shipInfo.type != classF) return;
+    db.players.filter(p => p[0] === name).forEach(p => {
+        const shipName = p[1];
+        const shipInfo = db.library[shipName];
+
+        // Filter Logic
+        if (shipInfo) {
+            // Tier Match: Handles "Tier 10" vs "10" vs "X"
+            if (tierF !== "All") {
+                const cleanInfoTier = String(shipInfo.tier).replace("Tier ", "");
+                const cleanFilterTier = tierF.replace("Tier ", "");
+                if (cleanInfoTier !== cleanFilterTier) return;
             }
-            // Column D is Index 3 (Ran WR)
-            const wr = (parseFloat(p[3] || 0) * 100).toFixed(1);
-            const opt = new Option(`${p[1]} (${wr}%)`, p[1]);
-            opt.className = getWRClass(wr);
-            shipSel.add(opt);
-        });
-    }
+            
+            // Class Match: Matches "Cruiser", "Battleship", etc.
+            if (classF !== "All" && shipInfo.type !== classF) return;
+        }
+
+        // Winrate Calculation (Column D = Index 3)
+        let rawWR = parseFloat(p[3] || 0);
+        let displayWR = (rawWR < 1) ? (rawWR * 100).toFixed(1) : rawWR.toFixed(1);
+        
+        const opt = new Option(`${shipName} (${displayWR}%)`, shipName);
+        opt.className = getWRClass(displayWR);
+        shipSel.add(opt);
+    });
+}
 
     function showStats(id) {
         const shipName = document.getElementById(`s-${id}`).value;
@@ -165,3 +179,4 @@
 </script>
 </body>
 </html>
+
