@@ -45,7 +45,7 @@
     let db = {};
 
     async function init() {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbzzIu4g8Wi9L_clGGTNW4AobrIFv7Bxy7bCPQ23YDhaRPzTV5qH4mXIIDviMXHG179UvQ/exec');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwaqvaQziBa6uBn5WoIjK4t9a-5IqDpBfnmGt1rXh1AuycKfoNNMo6j7Qz5lLANvBd09Q/exec');
         db = await response.json();
         
         // Populate Player Dropdowns
@@ -89,4 +89,5 @@
     init();
 </script>
 </body>
+
 </html>
