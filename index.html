@@ -9,62 +9,37 @@
             --text: #c9d1d9; --accent: #58a6ff;
             --wr-red: #ff4d4d; --wr-yellow: #ffcc00; --wr-green: #33ff33; --wr-purple: #bf00ff;
         }
-
         body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Layout */
-        #main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-        #filters { display: flex; gap: 15px; background: #010409; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
-        
-        /* Stats Summary */
-        #summary { display: flex; gap: 30px; }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; color: #8b949e; text-transform: uppercase; }
-        .stat-val { font-size: 18px; font-weight: bold; color: var(--accent); }
-
-        /* Board */
-        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
+        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; sticky: top; }
+        #filters { display: flex; gap: 10px; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
+        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
-        
-        /* Winrate Colors */
-        .wr-red { color: var(--wr-red); }
-        .wr-yellow { color: var(--wr-yellow); }
-        .wr-green { color: var(--wr-green); }
-        .wr-purple { color: var(--wr-purple); }
-
-        select { width: 100%; margin-bottom: 8px; padding: 8px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; }
-        .badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 5px; }
-        .radar { background: rgba(255, 77, 77, 0.2); color: #ff7b72; border: 1px solid #ff4d4d; }
-        .hydro { background: rgba(56, 139, 253, 0.2); color: #a5d6ff; border: 1px solid #388bfd; }
-        .battle-counts { font-size: 11px; color: #8b949e; margin-top: 5px; display: flex; gap: 10px; }
+        .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
+        .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
+        select { width: 100%; margin-bottom: 8px; padding: 8px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
+        .badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
+        .radar { background: rgba(255, 77, 77, 0.1); color: #ff7b72; border: 1px solid #ff4d4d; }
+        .hydro { background: rgba(56, 139, 253, 0.1); color: #a5d6ff; border: 1px solid #388bfd; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
+        .stat-card { background: #010409; padding: 6px 2px; border-radius: 4px; border: 1px solid var(--border); }
+        .stat-label { font-size: 9px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 2px; }
+        .stat-val { font-size: 13px; font-weight: bold; }
+        .btl-count { font-size: 9px; color: #484f58; display: block; }
     </style>
 </head>
 <body>
 
 <div id="main">
     <div id="top-bar">
-        <div id="summary">
-            <div class="stat-box"><span class="stat-label">Radars</span><span id="total-radar" class="stat-val">0</span></div>
-            <div class="stat-box"><span class="stat-label">Hydros</span><span id="total-hydro" class="stat-val">0</span></div>
-            <div id="status" style="font-size:11px; color:#8b949e; align-self:flex-end">Syncing...</div>
+        <div style="display:flex; gap:25px; align-items:center">
+            <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
+            <div style="font-size:13px; color:#8b949e">Fleet Utility: <span style="color:white; margin-left:10px">📡 Radar: <b id="total-radar">0</b></span> <span style="color:white; margin-left:10px">🌊 Hydro: <b id="total-hydro">0</b></span></div>
         </div>
-
         <div id="filters">
-            <span style="font-size:12px; align-self:center">Global Filters:</span>
-            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0">
-                <option value="All">All Tiers</option>
-                <option value="X">Tier X</option>
-                <option value="XI">Supership</option>
-            </select>
-            <select id="filter-class" onchange="applyFilters()" style="width:120px; margin:0">
-                <option value="All">All Classes</option>
-                <option value="AirCarrier">CV</option>
-                <option value="Battleship">BB</option>
-                <option value="Cruiser">CA/CL</option>
-                <option value="Destroyer">DD</option>
-                <option value="Submarine">SS</option>
-            </select>
+            <select id="filter-tier" onchange="applyFilters()" style="width:90px; margin:0"><option value="All">All Tiers</option><option value="X">Tier X</option><option value="XI">★ Tier</option></select>
+            <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0"><option value="All">All Types</option><option value="Destroyer">DD</option><option value="Cruiser">CA/CL</option><option value="Battleship">BB</option></select>
+            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Update Data</button>
         </div>
     </div>
 
@@ -73,7 +48,7 @@
             for(let i=1; i<=7; i++){
                 document.write(`
                     <div class="slot">
-                        <small style="color:#8b949e">POSITION ${i}</small>
+                        <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
                         <select id="p-${i}" onchange="updateShips(${i})"><option>Select Player</option></select>
                         <select id="s-${i}" onchange="showStats(${i})"><option>Select Ship</option></select>
                         <div id="stats-${i}"></div>
@@ -88,18 +63,26 @@
     let db = {};
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
+    function getWRClass(wr) {
+        let n = parseFloat(wr);
+        if (n >= 55) return 'wr-purple';
+        if (n >= 51) return 'wr-green';
+        if (n >= 46) return 'wr-yellow';
+        return 'wr-red';
+    }
+
     async function load() {
         try {
             const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
             const data = await res.json();
-            db.players = data.players.slice(1);
+            db.players = data.players; 
             db.library = {};
             data.libraryRaw.slice(1).forEach(r => {
                 db.library[r[0]] = { tier:r[1], type:r[2], detect:r[3], radar:r[6], hydro:r[7], speed:r[8] };
             });
-            document.getElementById('status').innerText = "Online: " + data.lastUpdated;
+            document.getElementById('status').innerText = "● LIVE DATA";
             initPlayers();
-        } catch (e) { document.getElementById('status').innerText = "Offline"; }
+        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
     }
 
     function initPlayers() {
@@ -109,16 +92,7 @@
         });
     }
 
-    function getWRClass(wr) {
-        if (wr >= 55) return 'wr-purple';
-        if (wr >= 51) return 'wr-green';
-        if (wr >= 46) return 'wr-yellow';
-        return 'wr-red';
-    }
-
-    function applyFilters() {
-        for(let i=1; i<=7; i++) updateShips(i);
-    }
+    function applyFilters() { for(let i=1; i<=7; i++) updateShips(i); }
 
     function updateShips(id) {
         const name = document.getElementById(`p-${id}`).value;
@@ -127,17 +101,18 @@
         const shipSel = document.getElementById(`s-${id}`);
         shipSel.innerHTML = '<option value="">Select Ship</option>';
 
+        if(name === "Select Player") return;
+
         db.players.filter(p => p[0] === name).forEach(p => {
             const shipInfo = db.library[p[1]];
-            if (!shipInfo) return;
-
-            // Apply Filters
-            if (tierF !== "All" && shipInfo.tier !== tierF) return;
-            if (classF !== "All" && shipInfo.type !== classF) return;
-
-            const wr = (parseFloat(p[3]) * 100).toFixed(1);
+            if (shipInfo) {
+                if (tierF !== "All" && shipInfo.tier != tierF) return;
+                if (classF !== "All" && shipInfo.type != classF) return;
+            }
+            // Column D is Index 3 (Ran WR)
+            const wr = (parseFloat(p[3] || 0) * 100).toFixed(1);
             const opt = new Option(`${p[1]} (${wr}%)`, p[1]);
-            opt.classList.add(getWRClass(wr));
+            opt.className = getWRClass(wr);
             shipSel.add(opt);
         });
     }
@@ -145,25 +120,32 @@
     function showStats(id) {
         const shipName = document.getElementById(`s-${id}`).value;
         const playerName = document.getElementById(`p-${id}`).value;
-        const info = db.library[shipName];
-        const pData = db.players.find(p => p[0] === playerName && p[1] === shipName);
         const display = document.getElementById(`stats-${id}`);
+        const info = db.library[shipName];
+        const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
 
-        if (info && pData) {
-            const wr = (parseFloat(pData[3]) * 100).toFixed(1);
-            // Indices based on typical sheet layout: Random (4), Ranked (5), Clan (6)
+        if (p) {
+            // Mapping: C=2, D=3, G=6, H=7, K=10, L=11
+            const ranWR = (parseFloat(p[3] || 0) * 100).toFixed(1);
+            const rnkWR = (parseFloat(p[7] || 0) * 100).toFixed(1);
+            const clnWR = (parseFloat(p[11] || 0) * 100).toFixed(1);
+
             display.innerHTML = `
-                <div style="font-size:14px; font-weight:bold" class="${getWRClass(wr)}">${wr}% WR</div>
-                <div class="battle-counts">
-                    <span>Ran: <b>${pData[4] || 0}</b></span>
-                    <span>Rnk: <b>${pData[5] || 0}</b></span>
-                    <span>CB: <b>${pData[6] || 0}</b></span>
+                <div class="stat-grid">
+                    <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(ranWR)}">${ranWR}%</span><span class="btl-count">${p[2] || 0} Btls</span></div>
+                    <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(rnkWR)}">${rnkWR}%</span><span class="btl-count">${p[6] || 0} Btls</span></div>
+                    <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(clnWR)}">${clnWR}%</span><span class="btl-count">${p[10] || 0} Btls</span></div>
                 </div>
-                <div style="font-size:12px; margin-top:5px; color:#8b949e">
-                    Detect: <b>${info.detect}km</b> | Speed: <b>${info.speed}kn</b>
-                </div>
-                ${info.radar !== "No" ? `<span class="badge radar">RADAR ${info.radar}km</span>` : ''}
-                ${info.hydro !== "No" ? `<span class="badge hydro">HYDRO ${info.hydro}km</span>` : ''}
+                ${info ? `
+                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; justify-content:space-between">
+                        <span>Conceal: <b style="color:white">${info.detect}km</b></span>
+                        <span>Speed: <b style="color:white">${info.speed}kn</b></span>
+                    </div>
+                    <div>
+                        ${info.radar != "No" ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
+                        ${info.hydro != "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
+                    </div>
+                ` : ''}
             `;
         } else { display.innerHTML = ""; }
         calcGlobal();
@@ -173,10 +155,7 @@
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
             const s = db.library[document.getElementById(`s-${i}`).value];
-            if(s) { 
-                if(s.radar !== "No") r++; 
-                if(s.hydro !== "No") h++; 
-            }
+            if(s) { if(s.radar != "No") r++; if(s.hydro != "No") h++; }
         }
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
