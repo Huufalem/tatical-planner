@@ -15,17 +15,24 @@
         #filters { display: flex; gap: 10px; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
         #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
+        
+        /* Winrate Colors */
         .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
         .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
+        
         select { width: 100%; margin-bottom: 8px; padding: 8px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
-        .badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
-        .radar { background: rgba(255, 77, 77, 0.1); color: #ff7b72; border: 1px solid #ff4d4d; }
-        .hydro { background: rgba(56, 139, 253, 0.1); color: #a5d6ff; border: 1px solid #388bfd; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
+        .radar { background: rgba(255, 77, 77, 0.15); color: #ff7b72; border: 1px solid #ff4d4d; }
+        .hydro { background: rgba(56, 139, 253, 0.15); color: #a5d6ff; border: 1px solid #388bfd; }
+        
+        /* Stats Grid */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
-        .stat-card { background: #010409; padding: 6px 2px; border-radius: 4px; border: 1px solid var(--border); }
-        .stat-label { font-size: 9px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 2px; }
-        .stat-val { font-size: 13px; font-weight: bold; }
-        .btl-count { font-size: 9px; color: #484f58; display: block; }
+        .stat-card { background: #010409; padding: 8px 2px; border-radius: 4px; border: 1px solid var(--border); }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 2px; }
+        .stat-val { font-size: 14px; font-weight: bold; display: block; }
+        .btl-count { font-size: 10px; color: #8b949e; font-weight: normal; margin-top: 2px; } /* Lightened battle count */
     </style>
 </head>
 <body>
@@ -37,19 +44,19 @@
             <div style="font-size:13px; color:#8b949e">Fleet Utility: <span style="color:white; margin-left:10px">📡 Radar: <b id="total-radar">0</b></span> <span style="color:white; margin-left:10px">🌊 Hydro: <b id="total-hydro">0</b></span></div>
         </div>
         <div id="filters">
-            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0">
+            <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
                 <option value="All">All Tiers</option>
                 <option value="Tier 10">Tier 10</option>
                 <option value="Tier 11">★ Tier</option>
                 <option value="Tier 9">Tier 9</option>
                 <option value="Tier 8">Tier 8</option>
             </select>
-            <select id="filter-class" onchange="applyFilters()" style="width:120px; margin:0">
-                <option value="All">All Types</option>
-                <option value="Destroyer">Destroyer</option>
-                <option value="Cruiser">Cruiser</option>
-                <option value="Battleship">Battleship</option>
-                <option value="AirCarrier">Carrier</option>
+            <select id="filter-class" onchange="applyFilters()" style="width:130px; margin:0">
+                <option value="All">All Classes</option>
+                <option value="destroyer">Destroyer</option>
+                <option value="cruiser">Cruiser</option>
+                <option value="battleship">Battleship</option>
+                <option value="aircarrier">Carrier</option>
             </select>
             <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
         </div>
@@ -83,6 +90,12 @@
         return 'wr-red';
     }
 
+    // Helper to prevent NaN
+    function cleanNum(val) {
+        let n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+    }
+
     async function load() {
         try {
             const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
@@ -90,17 +103,10 @@
             db.players = data.players; 
             db.library = {};
             
-            // Map the ShipLibrary Columns: 0:Name, 1:Tier, 2:Class, 3:Detect, 4:Guns, 5:Torps, 6:Radar, 7:Hydro, 8:Speed
             data.libraryRaw.slice(1).forEach(r => {
                 db.library[r[0]] = { 
-                    tier: r[1], 
-                    type: r[2], 
-                    detect: r[3], 
-                    guns: r[4], 
-                    torps: r[5], 
-                    radar: r[6], 
-                    hydro: r[7], 
-                    speed: r[8] 
+                    tier: r[1], type: r[2], detect: r[3], guns: r[4], 
+                    torps: r[5], radar: r[6], hydro: r[7], speed: r[8] 
                 };
             });
             document.getElementById('status').innerText = "● LIVE DATA";
@@ -131,18 +137,12 @@
             const shipInfo = db.library[shipName];
 
             if (shipInfo) {
-                // Tier Logic
-                if (tierF !== "All") {
-                    const cleanInfoTier = String(shipInfo.tier).replace("Tier ", "");
-                    const cleanFilterTier = tierF.replace("Tier ", "");
-                    if (cleanInfoTier !== cleanFilterTier) return;
-                }
-                // Class Logic
-                if (classF !== "All" && shipInfo.type !== classF) return;
+                if (tierF !== "All" && shipInfo.tier !== tierF) return;
+                if (classF !== "All" && shipInfo.type.toLowerCase() !== classF.toLowerCase()) return;
             }
 
-            let rawWR = parseFloat(p[3] || 0);
-            let displayWR = (rawWR < 1) ? (rawWR * 100).toFixed(1) : rawWR.toFixed(1);
+            let rawWR = cleanNum(p[3]);
+            let displayWR = (rawWR <= 1) ? (rawWR * 100).toFixed(1) : rawWR.toFixed(1);
             
             const opt = new Option(`${shipName} (${displayWR}%)`, shipName);
             opt.className = getWRClass(displayWR);
@@ -158,9 +158,10 @@
         const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
 
         if (p) {
-            const ranWR = (parseFloat(p[3] || 0) * 100).toFixed(1);
-            const rnkWR = (parseFloat(p[7] || 0) * 100).toFixed(1);
-            const clnWR = (parseFloat(p[11] || 0) * 100).toFixed(1);
+            // Mapping: D=3, H=7, L=11. Handle NaN by calling cleanNum.
+            const ranWR = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
+            const rnkWR = (cleanNum(p[7]) < 1 ? cleanNum(p[7]) * 100 : cleanNum(p[7])).toFixed(1);
+            const clnWR = (cleanNum(p[11]) < 1 ? cleanNum(p[11]) * 100 : cleanNum(p[11])).toFixed(1);
 
             display.innerHTML = `
                 <div class="stat-grid">
@@ -169,7 +170,7 @@
                     <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(clnWR)}">${clnWR}%</span><span class="btl-count">${p[10] || 0} Btls</span></div>
                 </div>
                 ${info ? `
-                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:5px;">
+                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:6px;">
                         <div style="display:flex; justify-content:space-between">
                             <span>Detect: <b style="color:white">${info.detect}km</b></span>
                             <span>Speed: <b style="color:white">${info.speed}kn</b></span>
@@ -179,9 +180,9 @@
                             <span>Torps: <b style="color:white">${info.torps}km</b></span>
                         </div>
                     </div>
-                    <div>
-                        ${info.radar != "No" ? `<span class="badge radar">📡 RADAR ${info.radar}</span>` : ''}
-                        ${info.hydro != "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}</span>` : ''}
+                    <div style="margin-top:4px">
+                        ${info.radar && info.radar !== "No" ? `<span class="badge radar">📡 RADAR ${info.radar}</span>` : ''}
+                        ${info.hydro && info.hydro !== "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}</span>` : ''}
                     </div>
                 ` : ''}
             `;
@@ -192,8 +193,12 @@
     function calcGlobal() {
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
-            const s = db.library[document.getElementById(`s-${i}`).value];
-            if(s) { if(s.radar && s.radar != "No") r++; if(s.hydro && s.hydro != "No") h++; }
+            const shipName = document.getElementById(`s-${i}`).value;
+            const s = db.library[shipName];
+            if(s) { 
+                if(s.radar && s.radar !== "No") r++; 
+                if(s.hydro && s.hydro !== "No") h++; 
+            }
         }
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
