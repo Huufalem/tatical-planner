@@ -97,11 +97,11 @@
             <div class="slot">
                 <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
                 <div class="search-container">
-                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="filterPlayers(${i})" oninput="filterPlayers(${i})" autocomplete="off">
+                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="clearAndShowPlayers(${i})" oninput="filterPlayers(${i})" autocomplete="off">
                     <div id="p-drop-${i}" class="custom-dropdown"></div>
                 </div>
                 <div class="search-container">
-                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="filterShips(${i})" oninput="filterShips(${i})" autocomplete="off">
+                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="clearAndShowShips(${i})" oninput="filterShips(${i})" autocomplete="off">
                     <div id="s-drop-${i}" class="custom-dropdown"></div>
                 </div>
                 <div id="stats-${i}"></div>
@@ -142,6 +142,23 @@
         } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
     }
 
+    // NEW: Clear logic for Player
+    function clearAndShowPlayers(id) {
+        document.getElementById(`p-${id}`).value = "";
+        document.getElementById(`s-${id}`).value = "";
+        document.getElementById(`stats-${id}`).innerHTML = "";
+        filterPlayers(id);
+        calcGlobal();
+    }
+
+    // NEW: Clear logic for Ship
+    function clearAndShowShips(id) {
+        document.getElementById(`s-${id}`).value = "";
+        document.getElementById(`stats-${id}`).innerHTML = "";
+        filterShips(id);
+        calcGlobal();
+    }
+
     function filterPlayers(id) {
         const input = document.getElementById(`p-${id}`);
         const drop = document.getElementById(`p-drop-${id}`);
@@ -155,8 +172,6 @@
     function selectPlayer(id, name) {
         document.getElementById(`p-${id}`).value = name;
         document.getElementById(`p-drop-${id}`).style.display = 'none';
-        document.getElementById(`s-${id}`).value = "";
-        document.getElementById(`stats-${id}`).innerHTML = "";
     }
 
     function filterShips(id) {
@@ -167,31 +182,20 @@
         const classF = document.getElementById('filter-class').value;
         const val = normalize(input.value);
 
-        if (!playerName) return;
+        if (!playerName) { drop.style.display = 'none'; return; }
 
         const playerStats = db.players.filter(p => p[0] === playerName);
         const matches = playerStats.filter(p => {
             const shipName = p[1];
             const info = db.library[shipName];
-            
-            // 1. Check if ship is in Library (MasterSheet)
             if (!info) return false; 
-            
-            // 2. Search Text
             if (!normalize(shipName).includes(val)) return false;
-
-            // 3. Tier Filter
             if (tierF !== "All") {
                 if (tierF === "11") {
                     if (info.tier !== "11" && info.tier !== "★") return false;
-                } else if (info.tier !== tierF) {
-                    return false;
-                }
+                } else if (info.tier !== tierF) return false;
             }
-
-            // 4. Class Filter (Hide ships that don't match BB/CA/DD if filter is active)
             if (classF !== "All" && info.type !== classF) return false;
-
             return true;
         });
 
