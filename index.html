@@ -88,30 +88,29 @@
         return isNaN(n) ? 0 : n;
     }
 
-    async function load() {
-        try {
-            const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
-            const data = await res.json();
-            db.players = data.players; 
-            db.library = {};
-            
-            // MAP MASTERDASHBOARD: 0:Ship, 1:Tier, 2:Class, 3:Detect, 4:Speed, 5:Gun Range, 6:Torp Range, 7:Hydro, 8:Radar
-            data.libraryRaw.slice(1).forEach(r => {
-                db.library[r[0]] = { 
-                    tier: String(r[1]), 
-                    type: r[2], 
-                    detect: r[3], 
-                    speed: r[4], 
-                    guns: r[5], 
-                    torps: r[6], 
-                    hydro: r[7], 
-                    radar: r[8] 
-                };
-            });
-            document.getElementById('status').innerText = "● LIVE DATA";
-            initPlayers();
-        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
-    }
+async function load() {
+    try {
+        const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
+        const data = await res.json();
+        db.players = data.players; 
+        db.library = {};
+        
+        // Mapped to your A-H layout
+        data.libraryRaw.slice(1).forEach(r => {
+            db.library[r[0]] = { 
+                tier: String(r[1]), 
+                type: r[2], 
+                speed: r[3], 
+                guns: r[4], 
+                torps: r[5], 
+                hydro: r[6], 
+                radar: r[7] 
+            };
+        });
+        document.getElementById('status').innerText = "● LIVE DATA";
+        initPlayers();
+    } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
+}
 
     function initPlayers() {
         const names = [...new Set(db.players.map(p => p[0]))].sort();
@@ -149,44 +148,47 @@
         });
     }
 
-    function showStats(id) {
-        const shipName = document.getElementById(`s-${id}`).value;
-        const playerName = document.getElementById(`p-${id}`).value;
-        const display = document.getElementById(`stats-${id}`);
-        const info = db.library[shipName];
-        const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
+function showStats(id) {
+    const shipName = document.getElementById(`s-${id}`).value;
+    const playerName = document.getElementById(`p-${id}`).value;
+    const display = document.getElementById(`stats-${id}`);
+    const info = db.library[shipName];
+    const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
 
-        if (p) {
-            const ranWR = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
-            const rnkWR = (cleanNum(p[7]) < 1 ? cleanNum(p[7]) * 100 : cleanNum(p[7])).toFixed(1);
-            const clnWR = (cleanNum(p[11]) < 1 ? cleanNum(p[11]) * 100 : cleanNum(p[11])).toFixed(1);
+    if (p && info) {
+        const ranWR = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
+        const rnkWR = (cleanNum(p[7]) < 1 ? cleanNum(p[7]) * 100 : cleanNum(p[7])).toFixed(1);
+        const clnWR = (cleanNum(p[11]) < 1 ? cleanNum(p[11]) * 100 : cleanNum(p[11])).toFixed(1);
 
-            display.innerHTML = `
-                <div class="stat-grid">
-                    <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(ranWR)}">${ranWR}%</span><span class="btl-count">${p[2] || 0} Btls</span></div>
-                    <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(rnkWR)}">${rnkWR}%</span><span class="btl-count">${p[6] || 0} Btls</span></div>
-                    <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(clnWR)}">${clnWR}%</span><span class="btl-count">${p[10] || 0} Btls</span></div>
+        // Helper to hide empty/zero stats
+        const isValid = (val) => val && val !== "--" && val !== "0" && val !== 0 && val !== "No";
+
+        display.innerHTML = `
+            <div class="stat-grid">
+                <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(ranWR)}">${ranWR}%</span><span class="btl-count">${p[2] || 0} Btls</span></div>
+                <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(rnkWR)}">${rnkWR}%</span><span class="btl-count">${p[6] || 0} Btls</span></div>
+                <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(clnWR)}">${clnWR}%</span><span class="btl-count">${p[10] || 0} Btls</span></div>
+            </div>
+            
+            <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between">
+                    <span>Speed: <b style="color:white">${info.speed}kn</b></span>
+                    <span>Guns: <b style="color:white">${info.guns}km</b></span>
                 </div>
-                ${info ? `
-                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:6px;">
-                        <div style="display:flex; justify-content:space-between">
-                            <span>Detect: <b style="color:white">${info.detect}km</b></span>
-                            <span>Speed: <b style="color:white">${info.speed}kn</b></span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between">
-                            <span>Guns: <b style="color:white">${info.guns}km</b></span>
-                            <span>Torps: <b style="color:white">${info.torps}km</b></span>
-                        </div>
-                    </div>
-                    <div style="margin-top:4px">
-                        ${info.radar && info.radar !== "--" ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
-                        ${info.hydro && info.hydro !== "--" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
-                    </div>
-                ` : ''}
-            `;
-        } else { display.innerHTML = ""; }
-        calcGlobal();
-    }
+                ${isValid(info.torps) ? `
+                <div style="display:flex; justify-content:space-between">
+                    <span>Torps: <b style="color:white">${info.torps}km</b></span>
+                </div>` : ''}
+            </div>
+
+            <div style="margin-top:4px">
+                ${isValid(info.radar) ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
+                ${isValid(info.hydro) ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
+            </div>
+        `;
+    } else { display.innerHTML = ""; }
+    calcGlobal();
+}
 
     function calcGlobal() {
         let r = 0, h = 0;
@@ -205,3 +207,4 @@
 </script>
 </body>
 </html>
+
