@@ -96,17 +96,18 @@ async function load() {
         db.library = {};
         
         // Mapped to your A-H layout
-        data.libraryRaw.slice(1).forEach(r => {
-            db.library[r[0]] = { 
-                tier: String(r[1]), 
-                type: r[2], 
-                speed: r[3], 
-                guns: r[4], 
-                torps: r[5], 
-                hydro: r[6], 
-                radar: r[7] 
-            };
-        });
+data.libraryRaw.slice(1).forEach(r => {
+    // We map r[index] to the specific keys used in showStats
+    db.library[r[0]] = { 
+        tier: String(r[1]), 
+        type: r[2], 
+        speed: r[3], 
+        guns: r[4], 
+        torps: r[5], 
+        hydro: r[6], // Column G
+        radar: r[7]  // Column H
+    };
+});
         document.getElementById('status').innerText = "● LIVE DATA";
         initPlayers();
     } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
@@ -207,4 +208,5 @@ function showStats(id) {
 </script>
 </body>
 </html>
+
 
