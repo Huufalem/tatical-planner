@@ -1,40 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Clan Tactical Planner</title>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --accent: #58a6ff; --text: #c9d1d9; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
-        
-        #sidebar { width: 280px; border-right: 1px solid #30363d; padding: 20px; overflow-y: auto; }
-        #board { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-
-        .slot { background: var(--card); border: 1px solid #30363d; border-radius: 8px; padding: 15px; transition: 0.3s; }
-        .slot:hover { border-color: var(--accent); }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.85rem; margin-top: 10px; }
-        .badge { padding: 3px 7px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-align: center; }
-        .radar-badge { background: #490000; color: #ff7b72; border: 1px solid #f85149; }
-        .hydro-badge { background: #002d5a; color: #a5d6ff; border: 1px solid #58a6ff; }
-        
-        select { width: 100%; background: #010409; color: white; border: 1px solid #30363d; padding: 8px; border-radius: 6px; margin-top: 5px; }
+        body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; margin: 0; display: flex; }
+        #sidebar { width: 250px; border-right: 1px solid #30363d; padding: 20px; height: 100vh; }
+        #board { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .slot { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; }
+        .badge { display: inline-block; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 5px; }
+        .radar { background: #490000; color: #ff7b72; border: 1px solid #f85149; }
+        .hydro { background: #002d5a; color: #a5d6ff; border: 1px solid #58a6ff; }
+        select { width: 100%; margin-top: 10px; padding: 5px; background: #010409; color: white; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>Clan Roster</h2>
-    <div id="memberList">Loading data...</div>
+    <h2>Roster</h2>
+    <div id="status">Syncing...</div>
+    <hr style="border-color:#30363d">
+    <div id="memberList"></div>
 </div>
 
-<div id="board">
+<div id="board" id="slot-container">
     <script>
-        for(let i=1; i<=7; i++) {
+        for(let i=1; i<=7; i++){
             document.write(`
                 <div class="slot">
-                    <div style="font-size: 0.7rem; color: #8b949e;">POSITION ${i}</div>
-                    <select id="player-${i}" onchange="populateShips(${i})"><option>Select Player</option></select>
-                    <select id="ship-${i}" onchange="renderStats(${i})"><option>Select Ship</option></select>
-                    <div id="stats-${i}"></div>
+                    <small>SLOT ${i}</small>
+                    <select id="p-${i}" onchange="updateShips(${i})"><option>Select Player</option></select>
+                    <select id="s-${i}" onchange="showStats(${i})"><option>Select Ship</option></select>
+                    <div id="stats-${i}" style="margin-top:10px; font-size:12px;"></div>
                 </div>
             `);
         }
@@ -43,51 +39,50 @@
 
 <script>
     let db = {};
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzzIu4g8Wi9L_clGGTNW4AobrIFv7Bxy7bCPQ23YDhaRPzTV5qH4mXIIDviMXHG179UvQ/exec';
 
-    async function init() {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwaqvaQziBa6uBn5WoIjK4t9a-5IqDpBfnmGt1rXh1AuycKfoNNMo6j7Qz5lLANvBd09Q/exec');
-        db = await response.json();
-        
-        // Populate Player Dropdowns
-        const names = [...new Set(db.players.map(p => p[0]))].sort();
-        document.querySelectorAll('[id^="player-"]').forEach(sel => {
-            names.forEach(n => sel.add(new Option(n, n)));
-        });
-        document.getElementById('memberList').innerHTML = names.join('<br>');
+    async function load() {
+        try {
+            const res = await fetch(API_URL);
+            db = await res.json();
+            if(db.error) { document.getElementById('status').innerHTML = "Error: " + db.error; return; }
+            
+            document.getElementById('status').innerHTML = "Last Sync: " + db.lastUpdated;
+            
+            // Fill Player Dropdowns
+            const names = [...new Set(db.players.map(p => p[0]))].sort();
+            document.querySelectorAll('[id^="p-"]').forEach(sel => {
+                names.forEach(n => sel.add(new Option(n, n)));
+            });
+            document.getElementById('memberList').innerHTML = names.join('<br>');
+        } catch (e) {
+            document.getElementById('status').innerHTML = "Connection Failed";
+        }
     }
 
-    function populateShips(slotId) {
-        const name = document.getElementById(`player-${slotId}`).value;
-        const shipSel = document.getElementById(`ship-${slotId}`);
+    function updateShips(id) {
+        const name = document.getElementById(`p-${id}`).value;
+        const shipSel = document.getElementById(`s-${id}`);
         shipSel.innerHTML = '<option>Select Ship</option>';
-        
-        // Filter players' best ships from the DB
         db.players.filter(p => p[0] === name).forEach(p => {
             shipSel.add(new Option(`${p[1]} (${p[3]}% WR)`, p[1]));
         });
     }
 
-    function renderStats(slotId) {
-        const shipName = document.getElementById(`ship-${slotId}`).value;
-        const specs = db.library[shipName];
-        const display = document.getElementById(`stats-${slotId}`);
-
-        if (specs) {
+    function showStats(id) {
+        const ship = document.getElementById(`s-${id}`).value;
+        const info = db.library[ship];
+        const display = document.getElementById(`stats-${id}`);
+        if(info) {
             display.innerHTML = `
-                <div class="stat-grid">
-                    <div>Detect: <b>${specs.detect}km</b></div>
-                    <div>Speed: <b>${specs.speed}kts</b></div>
-                </div>
-                <div style="margin-top:10px; display:flex; gap:5px;">
-                    ${specs.radar !== "No" ? `<div class="badge radar-badge">RADAR ${specs.radar}</div>` : ''}
-                    ${specs.hydro !== "No" ? `<div class="badge hydro-badge">HYDRO ${specs.hydro}</div>` : ''}
-                </div>
+                Detect: <b>${info.detect}km</b> | Speed: <b>${info.speed}kn</b><br>
+                ${info.radar !== "No" ? `<span class="badge radar">RADAR ${info.radar}</span>` : ''}
+                ${info.hydro !== "No" ? `<span class="badge hydro">HYDRO ${info.hydro}</span>` : ''}
             `;
         }
     }
 
-    init();
+    load();
 </script>
 </body>
-
 </html>
