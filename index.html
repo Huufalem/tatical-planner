@@ -69,7 +69,9 @@
         <div id="filters">
             <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
                 <option value="All">All Tiers</option>
-                <option value="10">Tier 10</option>
+                <script>
+                    for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);
+                </script>
                 <option value="11">★ Tier</option>
             </select>
             <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0">
@@ -82,15 +84,13 @@
         </div>
     </div>
 
-    <div id="board">
-        </div>
+    <div id="board"></div>
 </div>
 
 <script>
     let db = {};
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
-    // Build the board once
     const board = document.getElementById('board');
     for(let i=1; i<=7; i++){
         board.innerHTML += `
@@ -147,10 +147,7 @@
         const drop = document.getElementById(`p-drop-${id}`);
         const val = normalize(input.value);
         const names = [...new Set(db.players.slice(1).map(p => p[0]))].sort();
-        
-        // Show all matches (or all if empty)
         const matches = names.filter(n => normalize(n).includes(val));
-        
         drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
         drop.style.display = 'block';
     }
@@ -176,14 +173,25 @@
         const matches = playerStats.filter(p => {
             const shipName = p[1];
             const info = db.library[shipName];
+            
+            // 1. Check if ship is in Library (MasterSheet)
+            if (!info) return false; 
+            
+            // 2. Search Text
             if (!normalize(shipName).includes(val)) return false;
-            if (info) {
-                if (tierF !== "All") {
-                    if (tierF === "10" && info.tier !== "10") return false;
-                    if (tierF === "11" && (info.tier !== "11" && info.tier !== "★")) return false;
+
+            // 3. Tier Filter
+            if (tierF !== "All") {
+                if (tierF === "11") {
+                    if (info.tier !== "11" && info.tier !== "★") return false;
+                } else if (info.tier !== tierF) {
+                    return false;
                 }
-                if (classF !== "All" && info.type !== classF) return false;
             }
+
+            // 4. Class Filter (Hide ships that don't match BB/CA/DD if filter is active)
+            if (classF !== "All" && info.type !== classF) return false;
+
             return true;
         });
 
@@ -257,7 +265,6 @@
 
     function isValidConst(v) { return v && v !== "--" && v !== "0" && v !== 0 && v !== "No"; }
 
-    // Click away to close
     document.addEventListener('click', (e) => {
         if (!e.target.classList.contains('search-input')) {
             document.querySelectorAll('.custom-dropdown').forEach(d => d.style.display = 'none');
