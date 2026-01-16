@@ -42,31 +42,36 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbwaqvaQziBa6uBn5WoIjK4t9a-5IqDpBfnmGt1rXh1AuycKfoNNMo6j7Qz5lLANvBd09Q/exec';
 
 async function load() {
-    // Make sure this is your NEWEST /exec URL
+    // 1. DOUBLE CHECK: Make sure this URL ends in /exec
     const API_URL = 'https://script.google.com/macros/s/AKfycbwaqvaQziBa6uBn5WoIjK4t9a-5IqDpBfnmGt1rXh1AuycKfoNNMo6j7Qz5lLANvBd09Q/exec';
     const statusDiv = document.getElementById('status');
     
     try {
-        // We use a simple GET request. 
-        // Do NOT add headers like 'Content-Type': 'application/json' here.
-        const res = await fetch(API_URL, {
+        statusDiv.innerHTML = "Fetching data...";
+        
+        // This specific configuration is required for Google Apps Script
+        const response = await fetch(API_URL, {
             method: 'GET',
-            redirect: 'follow'
+            mode: 'cors', // Ensure CORS mode is on
+            redirect: 'follow' // Google ALWAYS redirects Web Apps
         });
 
-        if (!res.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Network response was not ok');
 
-        db = await res.json();
+        const db = await response.json();
         
-        if(db.error) {
+        if (db.error) {
             statusDiv.innerHTML = "Sheet Error: " + db.error;
             return;
         }
 
+        // Save to global variable
+        window.db = db;
         statusDiv.innerHTML = "Last Sync: " + db.lastUpdated;
-        renderUI();
+        renderUI(); 
+        
     } catch (e) {
-        console.error("Fetch error:", e);
+        console.error("Fetch error details:", e);
         statusDiv.innerHTML = "Connection Failed. Check URL permissions.";
     }
 }
@@ -97,5 +102,6 @@ async function load() {
 </script>
 </body>
 </html>
+
 
 
