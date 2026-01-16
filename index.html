@@ -21,11 +21,10 @@
         
         select, .search-input { width: 100%; margin-bottom: 8px; padding: 10px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
         
-        /* Custom Dropdown Styling */
         .search-container { position: relative; width: 100%; }
         .custom-dropdown {
             position: absolute;
-            top: 40px;
+            top: 42px;
             left: 0;
             right: 0;
             background: #0d1117;
@@ -84,33 +83,31 @@
     </div>
 
     <div id="board">
-        <script>
-            for(let i=1; i<=7; i++){
-                document.write(`
-                    <div class="slot">
-                        <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
-                        
-                        <div class="search-container">
-                            <input type="text" id="p-${i}" class="search-input" placeholder="Search Player..." oninput="filterPlayers(${i})" autocomplete="off">
-                            <div id="p-drop-${i}" class="custom-dropdown"></div>
-                        </div>
-                        
-                        <div class="search-container">
-                            <input type="text" id="s-${i}" class="search-input" placeholder="Search Ship..." oninput="filterShips(${i})" autocomplete="off">
-                            <div id="s-drop-${i}" class="custom-dropdown"></div>
-                        </div>
-                        
-                        <div id="stats-${i}"></div>
-                    </div>
-                `);
-            }
-        </script>
-    </div>
+        </div>
 </div>
 
 <script>
     let db = {};
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
+
+    // Build the board once
+    const board = document.getElementById('board');
+    for(let i=1; i<=7; i++){
+        board.innerHTML += `
+            <div class="slot">
+                <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
+                <div class="search-container">
+                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="filterPlayers(${i})" oninput="filterPlayers(${i})" autocomplete="off">
+                    <div id="p-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="filterShips(${i})" oninput="filterShips(${i})" autocomplete="off">
+                    <div id="s-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div id="stats-${i}"></div>
+            </div>
+        `;
+    }
 
     function normalize(str) {
         return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
@@ -151,11 +148,11 @@
         const val = normalize(input.value);
         const names = [...new Set(db.players.slice(1).map(p => p[0]))].sort();
         
-        if (!val) { drop.style.display = 'none'; return; }
-        
+        // Show all matches (or all if empty)
         const matches = names.filter(n => normalize(n).includes(val));
+        
         drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
-        drop.style.display = matches.length ? 'block' : 'none';
+        drop.style.display = 'block';
     }
 
     function selectPlayer(id, name) {
@@ -173,7 +170,7 @@
         const classF = document.getElementById('filter-class').value;
         const val = normalize(input.value);
 
-        if (!playerName || !val) { drop.style.display = 'none'; return; }
+        if (!playerName) return;
 
         const playerStats = db.players.filter(p => p[0] === playerName);
         const matches = playerStats.filter(p => {
@@ -199,7 +196,7 @@
                 </div>
             `;
         }).join('');
-        drop.style.display = matches.length ? 'block' : 'none';
+        drop.style.display = 'block';
     }
 
     function selectShip(id, shipName) {
@@ -247,7 +244,8 @@
     function calcGlobal() {
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
-            const s = db.library[document.getElementById(`s-${i}`).value];
+            const shipVal = document.getElementById(`s-${i}`).value;
+            const s = db.library[shipVal];
             if(s) { 
                 if(isValidConst(s.radar)) r++; 
                 if(isValidConst(s.hydro)) h++; 
@@ -259,6 +257,7 @@
 
     function isValidConst(v) { return v && v !== "--" && v !== "0" && v !== 0 && v !== "No"; }
 
+    // Click away to close
     document.addEventListener('click', (e) => {
         if (!e.target.classList.contains('search-input')) {
             document.querySelectorAll('.custom-dropdown').forEach(d => d.style.display = 'none');
@@ -268,243 +267,4 @@
     load();
 </script>
 </body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Clan Tactical Planner</title>
-    <style>
-        :root {
-            --bg-dark: #0d1117; --bg-panel: #161b22; --border: #30363d;
-            --text: #c9d1d9; --accent: #58a6ff;
-            --wr-red: #ff4d4d; --wr-yellow: #ffcc00; --wr-green: #33ff33; --wr-purple: #bf00ff;
-        }
-        body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
-        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-        #filters { display: flex; gap: 10px; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
-        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
-        .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
-        
-        .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
-        .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
-        
-        select, .search-input { width: 100%; margin-bottom: 8px; padding: 8px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
-        
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
-        .radar { background: rgba(255, 77, 77, 0.15); color: #ff7b72; border: 1px solid #ff4d4d; }
-        .hydro { background: rgba(56, 139, 253, 0.15); color: #a5d6ff; border: 1px solid #388bfd; }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
-        .stat-card { background: #010409; padding: 10px 2px; border-radius: 4px; border: 1px solid var(--border); min-height: 70px; display: flex; flex-direction: column; justify-content: center; }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; }
-        .stat-val { font-size: 14px; font-weight: bold; display: block; margin-bottom: 2px; }
-        .btl-count { font-size: 9px; color: #8b949e; margin-top: 2px; line-height: 1.1; }
-    </style>
-</head>
-<body>
-
-<div id="main">
-    <div id="top-bar">
-        <div style="display:flex; gap:25px; align-items:center">
-            <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
-            <div style="font-size:13px; color:#8b949e">Fleet Utility: <span style="color:white; margin-left:10px">📡 Radar: <b id="total-radar">0</b></span> <span style="color:white; margin-left:10px">🌊 Hydro: <b id="total-hydro">0</b></span></div>
-        </div>
-        <div id="filters">
-            <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
-                <option value="All">All Tiers</option>
-                <option value="10">Tier 10</option>
-                <option value="11">★ Tier</option>
-            </select>
-            <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0">
-                <option value="All">All Classes</option>
-                <option value="BB">BB</option>
-                <option value="CA">CA</option>
-                <option value="DD">DD</option>
-            </select>
-            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
-        </div>
-    </div>
-
-    <div id="board">
-        <script>
-            for(let i=1; i<=7; i++){
-                document.write(`
-                    <div class="slot">
-                        <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
-                        <input list="p-list-${i}" id="p-${i}" class="search-input" placeholder="Search Player..." oninput="updateShips(${i})">
-                        <datalist id="p-list-${i}"></datalist>
-                        
-                        <input list="s-list-${i}" id="s-${i}" class="search-input" placeholder="Search Ship..." oninput="showStats(${i})">
-                        <datalist id="s-list-${i}"></datalist>
-                        
-                        <div id="stats-${i}"></div>
-                    </div>
-                `);
-            }
-        </script>
-    </div>
-</div>
-
-<script>
-    let db = {};
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
-
-    function normalize(str) {
-        return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-    }
-
-    function getWRClass(wr) {
-        let n = parseFloat(wr);
-        if (n >= 55) return 'wr-purple';
-        if (n >= 51) return 'wr-green';
-        if (n >= 46) return 'wr-yellow';
-        return 'wr-red';
-    }
-
-    function cleanNum(val) {
-        let n = parseFloat(val);
-        return isNaN(n) ? 0 : n;
-    }
-
-    async function load() {
-        try {
-            const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
-            const data = await res.json();
-            db.players = data.players; 
-            db.library = {};
-            
-            // Map MasterDashboard: 0:Ship, 1:Tier, 2:Class, 3:Speed, 4:Guns, 5:Torps, 6:Hydro, 7:Radar
-            data.libraryRaw.slice(1).forEach(r => {
-                db.library[r[0]] = { 
-                    tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] 
-                };
-            });
-            document.getElementById('status').innerText = "● LIVE DATA";
-            initPlayers();
-        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
-    }
-
-    function initPlayers() {
-        const names = [...new Set(db.players.slice(1).map(p => p[0]))].sort();
-        for (let i = 1; i <= 7; i++) {
-            const dl = document.getElementById(`p-list-${i}`);
-            dl.innerHTML = "";
-            names.forEach(n => {
-                let opt = document.createElement('option');
-                opt.value = n;
-                dl.appendChild(opt);
-            });
-        }
-    }
-
-    function applyFilters() { for(let i=1; i<=7; i++) updateShips(i); }
-
-    function updateShips(id) {
-        const name = document.getElementById(`p-${id}`).value;
-        const tierF = document.getElementById('filter-tier').value;
-        const classF = document.getElementById('filter-class').value;
-        const dl = document.getElementById(`s-list-${id}`);
-        dl.innerHTML = "";
-
-        const playerStats = db.players.filter(p => p[0] === name);
-        if(playerStats.length === 0) return;
-
-        playerStats.forEach(p => {
-            const shipName = p[1];
-            const info = db.library[shipName];
-
-            if (info) {
-                if (tierF !== "All") {
-                    if (tierF === "10" && info.tier !== "10") return;
-                    if (tierF === "11" && (info.tier !== "11" && info.tier !== "★")) return;
-                }
-                if (classF !== "All" && info.type !== classF) return;
-            }
-
-            let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
-            let opt = document.createElement('option');
-            opt.value = shipName;
-            opt.label = `${wr}%`;
-            dl.appendChild(opt);
-        });
-    }
-
-    function showStats(id) {
-        const shipName = document.getElementById(`s-${id}`).value;
-        const playerName = document.getElementById(`p-${id}`).value;
-        const display = document.getElementById(`stats-${id}`);
-        const info = db.library[shipName];
-        
-        const p = db.players.slice(1).find(x => x[0] === playerName && normalize(x[1]) === normalize(shipName));
-
-        if (p && info) {
-            const getVal = (idx, pct, dec) => {
-                let v = cleanNum(p[idx]);
-                if (pct) {
-                    v = v < 1 ? v * 100 : v;
-                    return v.toFixed(1) + '%';
-                }
-                return dec === 0 ? Math.round(v).toLocaleString() : v.toFixed(dec);
-            };
-
-            const isValid = (val) => val && val !== "--" && val !== "0" && val !== 0 && val !== "No";
-
-            display.innerHTML = `
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <span class="stat-label">Random</span>
-                        <span class="stat-val ${getWRClass(getVal(3,true,1))}">${getVal(3,true,1)}</span>
-                        <div class="btl-count">${getVal(4,false,0)} Dmg</div>
-                        <div class="btl-count">${getVal(5,false,1)} Frags</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Ranked</span>
-                        <span class="stat-val ${getWRClass(getVal(7,true,1))}">${getVal(7,true,1)}</span>
-                        <div class="btl-count">${getVal(8,false,0)} Dmg</div>
-                        <div class="btl-count">${getVal(9,false,1)} Frags</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Clan</span>
-                        <span class="stat-val ${getWRClass(getVal(11,true,1))}">${getVal(11,true,1)}</span>
-                        <div class="btl-count">${getVal(12,false,0)} Dmg</div>
-                        <div class="btl-count">${getVal(13,false,1)} Frags</div>
-                    </div>
-                </div>
-                
-                <div style="font-size:11px; margin-top:10px; padding-top:8px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:4px;">
-                    <div style="display:flex; justify-content:space-between">
-                        <span>Speed: <b style="color:white">${info.speed}kn</b></span>
-                        <span>Guns: <b style="color:white">${info.guns}km</b></span>
-                    </div>
-                    ${isValid(info.torps) ? `<div style="display:flex; justify-content:space-between"><span>Torps: <b style="color:white">${info.torps}km</b></span></div>` : ''}
-                </div>
-
-                <div style="margin-top:6px">
-                    ${isValid(info.radar) ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
-                    ${isValid(info.hydro) ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
-                </div>
-            `;
-        } else { display.innerHTML = ""; }
-        calcGlobal();
-    }
-
-    function calcGlobal() {
-        let r = 0, h = 0;
-        for(let i=1; i<=7; i++) {
-            const shipVal = document.getElementById(`s-${i}`).value;
-            const s = db.library[shipVal];
-            if(s) { 
-                if(s.radar && s.radar !== "--") r++; 
-                if(s.hydro && s.hydro !== "--") h++; 
-            }
-        }
-        document.getElementById('total-radar').innerText = r;
-        document.getElementById('total-hydro').innerText = h;
-    }
-
-    load();
-</script>
-</body>
 </html>
-
