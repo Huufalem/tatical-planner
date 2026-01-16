@@ -11,7 +11,7 @@
         }
         body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
-        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; sticky: top; }
+        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
         #filters { display: flex; gap: 10px; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
         #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
@@ -37,9 +37,21 @@
             <div style="font-size:13px; color:#8b949e">Fleet Utility: <span style="color:white; margin-left:10px">📡 Radar: <b id="total-radar">0</b></span> <span style="color:white; margin-left:10px">🌊 Hydro: <b id="total-hydro">0</b></span></div>
         </div>
         <div id="filters">
-            <select id="filter-tier" onchange="applyFilters()" style="width:90px; margin:0"><option value="All">All Tiers</option><option value="X">Tier X</option><option value="XI">★ Tier</option></select>
-            <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0"><option value="All">All Types</option><option value="Destroyer">DD</option><option value="Cruiser">CA/CL</option><option value="Battleship">BB</option></select>
-            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Update Data</button>
+            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0">
+                <option value="All">All Tiers</option>
+                <option value="Tier 10">Tier 10</option>
+                <option value="Tier 11">★ Tier</option>
+                <option value="Tier 9">Tier 9</option>
+                <option value="Tier 8">Tier 8</option>
+            </select>
+            <select id="filter-class" onchange="applyFilters()" style="width:120px; margin:0">
+                <option value="All">All Types</option>
+                <option value="Destroyer">Destroyer</option>
+                <option value="Cruiser">Cruiser</option>
+                <option value="Battleship">Battleship</option>
+                <option value="AirCarrier">Carrier</option>
+            </select>
+            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
         </div>
     </div>
 
@@ -77,8 +89,19 @@
             const data = await res.json();
             db.players = data.players; 
             db.library = {};
+            
+            // Map the ShipLibrary Columns: 0:Name, 1:Tier, 2:Class, 3:Detect, 4:Guns, 5:Torps, 6:Radar, 7:Hydro, 8:Speed
             data.libraryRaw.slice(1).forEach(r => {
-                db.library[r[0]] = { tier:r[1], type:r[2], detect:r[3], radar:r[6], hydro:r[7], speed:r[8] };
+                db.library[r[0]] = { 
+                    tier: r[1], 
+                    type: r[2], 
+                    detect: r[3], 
+                    guns: r[4], 
+                    torps: r[5], 
+                    radar: r[6], 
+                    hydro: r[7], 
+                    speed: r[8] 
+                };
             });
             document.getElementById('status').innerText = "● LIVE DATA";
             initPlayers();
@@ -94,42 +117,38 @@
 
     function applyFilters() { for(let i=1; i<=7; i++) updateShips(i); }
 
-   function updateShips(id) {
-    const name = document.getElementById(`p-${id}`).value;
-    const tierF = document.getElementById('filter-tier').value;
-    const classF = document.getElementById('filter-class').value;
-    const shipSel = document.getElementById(`s-${id}`);
-    
-    shipSel.innerHTML = '<option value="">Select Ship</option>';
-
-    if(name === "Select Player" || !name) return;
-
-    db.players.filter(p => p[0] === name).forEach(p => {
-        const shipName = p[1];
-        const shipInfo = db.library[shipName];
-
-        // Filter Logic
-        if (shipInfo) {
-            // Tier Match: Handles "Tier 10" vs "10" vs "X"
-            if (tierF !== "All") {
-                const cleanInfoTier = String(shipInfo.tier).replace("Tier ", "");
-                const cleanFilterTier = tierF.replace("Tier ", "");
-                if (cleanInfoTier !== cleanFilterTier) return;
-            }
-            
-            // Class Match: Matches "Cruiser", "Battleship", etc.
-            if (classF !== "All" && shipInfo.type !== classF) return;
-        }
-
-        // Winrate Calculation (Column D = Index 3)
-        let rawWR = parseFloat(p[3] || 0);
-        let displayWR = (rawWR < 1) ? (rawWR * 100).toFixed(1) : rawWR.toFixed(1);
+    function updateShips(id) {
+        const name = document.getElementById(`p-${id}`).value;
+        const tierF = document.getElementById('filter-tier').value;
+        const classF = document.getElementById('filter-class').value;
+        const shipSel = document.getElementById(`s-${id}`);
         
-        const opt = new Option(`${shipName} (${displayWR}%)`, shipName);
-        opt.className = getWRClass(displayWR);
-        shipSel.add(opt);
-    });
-}
+        shipSel.innerHTML = '<option value="">Select Ship</option>';
+        if(name === "Select Player" || !name) return;
+
+        db.players.filter(p => p[0] === name).forEach(p => {
+            const shipName = p[1];
+            const shipInfo = db.library[shipName];
+
+            if (shipInfo) {
+                // Tier Logic
+                if (tierF !== "All") {
+                    const cleanInfoTier = String(shipInfo.tier).replace("Tier ", "");
+                    const cleanFilterTier = tierF.replace("Tier ", "");
+                    if (cleanInfoTier !== cleanFilterTier) return;
+                }
+                // Class Logic
+                if (classF !== "All" && shipInfo.type !== classF) return;
+            }
+
+            let rawWR = parseFloat(p[3] || 0);
+            let displayWR = (rawWR < 1) ? (rawWR * 100).toFixed(1) : rawWR.toFixed(1);
+            
+            const opt = new Option(`${shipName} (${displayWR}%)`, shipName);
+            opt.className = getWRClass(displayWR);
+            shipSel.add(opt);
+        });
+    }
 
     function showStats(id) {
         const shipName = document.getElementById(`s-${id}`).value;
@@ -139,7 +158,6 @@
         const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
 
         if (p) {
-            // Mapping: C=2, D=3, G=6, H=7, K=10, L=11
             const ranWR = (parseFloat(p[3] || 0) * 100).toFixed(1);
             const rnkWR = (parseFloat(p[7] || 0) * 100).toFixed(1);
             const clnWR = (parseFloat(p[11] || 0) * 100).toFixed(1);
@@ -151,13 +169,19 @@
                     <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(clnWR)}">${clnWR}%</span><span class="btl-count">${p[10] || 0} Btls</span></div>
                 </div>
                 ${info ? `
-                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; justify-content:space-between">
-                        <span>Conceal: <b style="color:white">${info.detect}km</b></span>
-                        <span>Speed: <b style="color:white">${info.speed}kn</b></span>
+                    <div style="font-size:12px; margin-top:12px; padding-top:10px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:5px;">
+                        <div style="display:flex; justify-content:space-between">
+                            <span>Detect: <b style="color:white">${info.detect}km</b></span>
+                            <span>Speed: <b style="color:white">${info.speed}kn</b></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between">
+                            <span>Guns: <b style="color:white">${info.guns}km</b></span>
+                            <span>Torps: <b style="color:white">${info.torps}km</b></span>
+                        </div>
                     </div>
                     <div>
-                        ${info.radar != "No" ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
-                        ${info.hydro != "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
+                        ${info.radar != "No" ? `<span class="badge radar">📡 RADAR ${info.radar}</span>` : ''}
+                        ${info.hydro != "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}</span>` : ''}
                     </div>
                 ` : ''}
             `;
@@ -169,7 +193,7 @@
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
             const s = db.library[document.getElementById(`s-${i}`).value];
-            if(s) { if(s.radar != "No") r++; if(s.hydro != "No") h++; }
+            if(s) { if(s.radar && s.radar != "No") r++; if(s.hydro && s.hydro != "No") h++; }
         }
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
@@ -179,4 +203,3 @@
 </script>
 </body>
 </html>
-
