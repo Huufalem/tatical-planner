@@ -39,69 +39,100 @@
 
 <script>
     let db = {};
+    // PASTE YOUR WORKING URL HERE
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
-async function load() {
-    // 1. DOUBLE CHECK: Make sure this URL ends in /exec
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
-    const statusDiv = document.getElementById('status');
-    
-    try {
-        statusDiv.innerHTML = "Fetching data...";
+    async function load() {
+        const statusDiv = document.getElementById('status');
+        try {
+            statusDiv.innerHTML = "Connecting to Fleet Command...";
+            
+            // This setup is the "Magic Key" for Google Apps Script + GitHub
+            const response = await fetch(API_URL, {
+                method: 'GET',
+                mode: 'cors',
+                redirect: 'follow'
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const rawData = await response.json();
+            
+            if (rawData.error) {
+                statusDiv.innerHTML = "Sheet Error: " + rawData.error;
+                return;
+            }
+
+            // Process the data since we simplified the doGet
+            db.players = rawData.players.slice(1); // Remove headers
+            db.library = {};
+            
+            // Convert raw library rows into a searchable map
+            rawData.libraryRaw.slice(1).forEach(row => {
+                db.library[row[0]] = {
+                    tier: row[1], class: row[2], detect: row[3],
+                    guns: row[4], torps: row[5], radar: row[6],
+                    hydro: row[7], speed: row[8]
+                };
+            });
+
+            db.lastUpdated = rawData.lastUpdated;
+            statusDiv.innerHTML = "Online - Last Sync: " + db.lastUpdated;
+            
+            renderUI(); 
+            
+        } catch (e) {
+            console.error("Critical Error:", e);
+            statusDiv.innerHTML = "<b>Connection Failed.</b><br><small>Try opening in Incognito mode.</small>";
+        }
+    }
+
+    function renderUI() {
+        const names = [...new Set(db.players.map(p => p[0]))].sort();
         
-        // This specific configuration is required for Google Apps Script
-        const response = await fetch(API_URL, {
-            method: 'GET',
-            mode: 'cors', // Ensure CORS mode is on
-            redirect: 'follow' // Google ALWAYS redirects Web Apps
+        // Fill Player Selects
+        document.querySelectorAll('[id^="p-"]').forEach(sel => {
+            sel.innerHTML = '<option>Select Player</option>';
+            names.forEach(n => sel.add(new Option(n, n)));
         });
 
-        if (!response.ok) throw new Error('Network response was not ok');
-
-        const db = await response.json();
-        
-        if (db.error) {
-            statusDiv.innerHTML = "Sheet Error: " + db.error;
-            return;
-        }
-
-        // Save to global variable
-        window.db = db;
-        statusDiv.innerHTML = "Last Sync: " + db.lastUpdated;
-        renderUI(); 
-        
-    } catch (e) {
-        console.error("Fetch error details:", e);
-        statusDiv.innerHTML = "Connection Failed. Check URL permissions.";
+        // Fill Sidebar
+        document.getElementById('memberList').innerHTML = names.join('<br>');
     }
-}
 
     function updateShips(id) {
         const name = document.getElementById(`p-${id}`).value;
         const shipSel = document.getElementById(`s-${id}`);
         shipSel.innerHTML = '<option>Select Ship</option>';
+        
+        // Filter players data for selected name
         db.players.filter(p => p[0] === name).forEach(p => {
             shipSel.add(new Option(`${p[1]} (${p[3]}% WR)`, p[1]));
         });
     }
 
     function showStats(id) {
-        const ship = document.getElementById(`s-${id}`).value;
-        const info = db.library[ship];
+        const shipName = document.getElementById(`s-${id}`).value;
+        const info = db.library[shipName];
         const display = document.getElementById(`stats-${id}`);
+        
         if(info) {
             display.innerHTML = `
-                Detect: <b>${info.detect}km</b> | Speed: <b>${info.speed}kn</b><br>
-                ${info.radar !== "No" ? `<span class="badge radar">RADAR ${info.radar}</span>` : ''}
-                ${info.hydro !== "No" ? `<span class="badge hydro">HYDRO ${info.hydro}</span>` : ''}
+                <div style="margin-bottom:5px">Detect: <b>${info.detect}km</b> | Speed: <b>${info.speed}kn</b></div>
+                ${info.radar && info.radar !== "No" ? `<span class="badge radar">RADAR ${info.radar}km</span>` : ''}
+                ${info.hydro && info.hydro !== "No" ? `<span class="badge hydro">HYDRO ${info.hydro}km</span>` : ''}
             `;
+        } else {
+            display.innerHTML = "";
         }
     }
 
+    // Start the app
     load();
 </script>
 </body>
 </html>
+
 
 
 
