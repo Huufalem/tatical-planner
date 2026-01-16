@@ -24,38 +24,29 @@
         .search-container { position: relative; width: 100%; }
         .custom-dropdown {
             position: absolute;
-            top: 42px;
-            left: 0;
-            right: 0;
-            background: #0d1117;
-            border: 1px solid var(--border);
-            max-height: 250px;
-            overflow-y: auto;
-            z-index: 9999;
-            display: none;
-            border-radius: 4px;
+            top: 42px; left: 0; right: 0;
+            background: #0d1117; border: 1px solid var(--border);
+            max-height: 250px; overflow-y: auto; z-index: 9999;
+            display: none; border-radius: 4px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.6);
         }
-        .dropdown-item {
-            padding: 10px 12px;
-            cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #21262d;
-        }
+        .dropdown-item { padding: 10px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; }
         .dropdown-item:hover { background: #1f2937; }
-        .wr-tag { font-weight: bold; }
-
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
-        .radar { background: rgba(255, 77, 77, 0.15); color: #ff7b72; border: 1px solid #ff4d4d; }
-        .hydro { background: rgba(56, 139, 253, 0.15); color: #a5d6ff; border: 1px solid #388bfd; }
+        
+        /* Game Asset Badges */
+        .badge { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 8px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .badge img { width: 22px; height: 22px; }
+        .radar-bg { background: rgba(56, 139, 253, 0.1); color: #58a6ff; border-color: #388bfd; }
+        .hydro-bg { background: rgba(51, 255, 51, 0.1); color: #33ff33; border-color: #33ff33; }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
         .stat-card { background: #010409; padding: 10px 2px; border-radius: 4px; border: 1px solid var(--border); min-height: 75px; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; }
         .stat-val { font-size: 14px; font-weight: bold; display: block; margin-bottom: 2px; }
         .btl-count { font-size: 9px; color: #8b949e; margin-top: 2px; line-height: 1.1; }
+
+        .spec-item { display: flex; align-items: center; gap: 8px; color: #c9d1d9; font-size: 13px; }
+        .spec-icon { width: 20px; height: 20px; filter: brightness(0.9); }
     </style>
 </head>
 <body>
@@ -64,14 +55,16 @@
     <div id="top-bar">
         <div style="display:flex; gap:25px; align-items:center">
             <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
-            <div style="font-size:13px; color:#8b949e">Fleet Utility: <span style="color:white; margin-left:10px">📡 Radar: <b id="total-radar">0</b></span> <span style="color:white; margin-left:10px">🌊 Hydro: <b id="total-hydro">0</b></span></div>
+            <div style="font-size:13px; color:#8b949e; display:flex; align-items:center; gap:15px">
+                Fleet Utility: 
+                <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png" style="width:20px"> Radar: <b id="total-radar" style="color:#58a6ff">0</b></span> 
+                <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png" style="width:20px"> Hydro: <b id="total-hydro" style="color:#33ff33">0</b></span>
+            </div>
         </div>
         <div id="filters">
             <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
                 <option value="All">All Tiers</option>
-                <script>
-                    for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);
-                </script>
+                <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);</script>
                 <option value="11">★ Tier</option>
             </select>
             <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0">
@@ -83,7 +76,6 @@
             <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
         </div>
     </div>
-
     <div id="board"></div>
 </div>
 
@@ -109,54 +101,33 @@
         `;
     }
 
-    function normalize(str) {
-        return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-    }
-
+    function normalize(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
     function getWRClass(wr) {
         let n = parseFloat(wr);
-        if (n >= 55) return 'wr-purple';
-        if (n >= 51) return 'wr-green';
-        if (n >= 46) return 'wr-yellow';
+        if (n >= 55) return 'wr-purple'; if (n >= 51) return 'wr-green'; if (n >= 46) return 'wr-yellow';
         return 'wr-red';
     }
-
-    function cleanNum(val) {
-        let n = parseFloat(val);
-        return isNaN(n) ? 0 : n;
-    }
+    function cleanNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
 
     async function load() {
         try {
             const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
             const data = await res.json();
-            db.players = data.players; 
-            db.library = {};
-            
+            db.players = data.players; db.library = {};
             data.libraryRaw.slice(1).forEach(r => {
-                db.library[r[0]] = { 
-                    tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] 
-                };
+                db.library[r[0]] = { tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] };
             });
             document.getElementById('status').innerText = "● LIVE DATA";
         } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
     }
 
-    // NEW: Clear logic for Player
     function clearAndShowPlayers(id) {
-        document.getElementById(`p-${id}`).value = "";
-        document.getElementById(`s-${id}`).value = "";
-        document.getElementById(`stats-${id}`).innerHTML = "";
-        filterPlayers(id);
-        calcGlobal();
+        document.getElementById(`p-${id}`).value = ""; document.getElementById(`s-${id}`).value = "";
+        document.getElementById(`stats-${id}`).innerHTML = ""; filterPlayers(id); calcGlobal();
     }
-
-    // NEW: Clear logic for Ship
     function clearAndShowShips(id) {
-        document.getElementById(`s-${id}`).value = "";
-        document.getElementById(`stats-${id}`).innerHTML = "";
-        filterShips(id);
-        calcGlobal();
+        document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = "";
+        filterShips(id); calcGlobal();
     }
 
     function filterPlayers(id) {
@@ -168,11 +139,7 @@
         drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
         drop.style.display = 'block';
     }
-
-    function selectPlayer(id, name) {
-        document.getElementById(`p-${id}`).value = name;
-        document.getElementById(`p-drop-${id}`).style.display = 'none';
-    }
+    function selectPlayer(id, name) { document.getElementById(`p-${id}`).value = name; document.getElementById(`p-drop-${id}`).style.display = 'none'; }
 
     function filterShips(id) {
         const playerName = document.getElementById(`p-${id}`).value;
@@ -181,41 +148,24 @@
         const tierF = document.getElementById('filter-tier').value;
         const classF = document.getElementById('filter-class').value;
         const val = normalize(input.value);
-
         if (!playerName) { drop.style.display = 'none'; return; }
-
-        const playerStats = db.players.filter(p => p[0] === playerName);
-        const matches = playerStats.filter(p => {
-            const shipName = p[1];
-            const info = db.library[shipName];
-            if (!info) return false; 
-            if (!normalize(shipName).includes(val)) return false;
+        const matches = db.players.filter(p => p[0] === playerName).filter(p => {
+            const info = db.library[p[1]];
+            if (!info) return false; if (!normalize(p[1]).includes(val)) return false;
             if (tierF !== "All") {
-                if (tierF === "11") {
-                    if (info.tier !== "11" && info.tier !== "★") return false;
-                } else if (info.tier !== tierF) return false;
+                if (tierF === "11") { if (info.tier !== "11" && info.tier !== "★") return false; }
+                else if (info.tier !== tierF) return false;
             }
             if (classF !== "All" && info.type !== classF) return false;
             return true;
         });
-
         drop.innerHTML = matches.map(p => {
             let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
-            return `
-                <div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')">
-                    <span>${p[1]}</span>
-                    <span class="wr-tag ${getWRClass(wr)}">${wr}%</span>
-                </div>
-            `;
+            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')"><span>${p[1]}</span><span class="wr-tag ${getWRClass(wr)}">${wr}%</span></div>`;
         }).join('');
         drop.style.display = 'block';
     }
-
-    function selectShip(id, shipName) {
-        document.getElementById(`s-${id}`).value = shipName;
-        document.getElementById(`s-drop-${id}`).style.display = 'none';
-        showStats(id);
-    }
+    function selectShip(id, shipName) { document.getElementById(`s-${id}`).value = shipName; document.getElementById(`s-drop-${id}`).style.display = 'none'; showStats(id); }
 
     function applyFilters() { for(let i=1; i<=7; i++) { if(document.getElementById(`s-${i}`).value) showStats(i); } }
 
@@ -225,28 +175,26 @@
         const display = document.getElementById(`stats-${id}`);
         const info = db.library[shipName];
         const p = db.players.slice(1).find(x => x[0] === playerName && x[1] === shipName);
-
         if (p && info) {
             const fmt = (idx, pct, dec) => {
-                let v = cleanNum(p[idx]);
-                if (pct) { v = v < 1 ? v * 100 : v; return v.toFixed(1) + '%'; }
+                let v = cleanNum(p[idx]); if (pct) { v = v < 1 ? v * 100 : v; return v.toFixed(1) + '%'; }
                 return dec === 0 ? Math.round(v).toLocaleString() : v.toFixed(dec);
             };
             const isValid = (v) => v && v !== "--" && v !== "0" && v !== 0 && v !== "No";
-
             display.innerHTML = `
                 <div class="stat-grid">
                     <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(fmt(3,true,1))}">${fmt(3,true,1)}</span><div class="btl-count">${fmt(4,false,0)} Dmg</div><div class="btl-count">${fmt(5,false,1)} Frags</div></div>
                     <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(fmt(7,true,1))}">${fmt(7,true,1)}</span><div class="btl-count">${fmt(8,false,0)} Dmg</div><div class="btl-count">${fmt(9,false,1)} Frags</div></div>
                     <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(fmt(11,true,1))}">${fmt(11,true,1)}</span><div class="btl-count">${fmt(12,false,0)} Dmg</div><div class="btl-count">${fmt(13,false,1)} Frags</div></div>
                 </div>
-                <div style="font-size:11px; margin-top:10px; padding-top:8px; border-top:1px solid #30363d; display:flex; flex-direction:column; gap:4px;">
-                    <div style="display:flex; justify-content:space-between"><span>Speed: <b style="color:white">${info.speed}kn</b></span><span>Guns: <b style="color:white">${info.guns}km</b></span></div>
-                    ${isValid(info.torps) ? `<div style="display:flex; justify-content:space-between"><span>Torps: <b style="color:white">${info.torps}km</b></span></div>` : ''}
+                <div style="font-size:11px; margin-top:12px; padding-top:8px; border-top:1px solid #30363d; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/a/aa/Module_wows_engine.png"> <b>${info.speed}kn</b></div>
+                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/2/24/Module_wows_artillery.png"> <b>${info.guns}km</b></div>
+                    ${isValid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png"> <b>${info.torps}km</b></div>` : ''}
                 </div>
-                <div style="margin-top:6px">
-                    ${isValid(info.radar) ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
-                    ${isValid(info.hydro) ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
+                <div style="margin-top:8px">
+                    ${isValid(info.radar) ? `<span class="badge radar-bg"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"> RADAR ${info.radar}km</span>` : ''}
+                    ${isValid(info.hydro) ? `<span class="badge hydro-bg"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"> HYDRO ${info.hydro}km</span>` : ''}
                 </div>
             `;
         }
@@ -256,25 +204,14 @@
     function calcGlobal() {
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
-            const shipVal = document.getElementById(`s-${i}`).value;
-            const s = db.library[shipVal];
-            if(s) { 
-                if(isValidConst(s.radar)) r++; 
-                if(isValidConst(s.hydro)) h++; 
-            }
+            const s = db.library[document.getElementById(`s-${i}`).value];
+            if(s) { if(isValidConst(s.radar)) r++; if(isValidConst(s.hydro)) h++; }
         }
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
     }
-
     function isValidConst(v) { return v && v !== "--" && v !== "0" && v !== 0 && v !== "No"; }
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('search-input')) {
-            document.querySelectorAll('.custom-dropdown').forEach(d => d.style.display = 'none');
-        }
-    });
-
+    document.addEventListener('click', (e) => { if (!e.target.classList.contains('search-input')) { document.querySelectorAll('.custom-dropdown').forEach(d => d.style.display = 'none'); } });
     load();
 </script>
 </body>
