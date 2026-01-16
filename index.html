@@ -41,24 +41,35 @@
     let db = {};
     const API_URL = 'https://script.google.com/macros/s/AKfycbzzIu4g8Wi9L_clGGTNW4AobrIFv7Bxy7bCPQ23YDhaRPzTV5qH4mXIIDviMXHG179UvQ/exec';
 
-    async function load() {
-        try {
-            const res = await fetch(API_URL);
-            db = await res.json();
-            if(db.error) { document.getElementById('status').innerHTML = "Error: " + db.error; return; }
-            
-            document.getElementById('status').innerHTML = "Last Sync: " + db.lastUpdated;
-            
-            // Fill Player Dropdowns
-            const names = [...new Set(db.players.map(p => p[0]))].sort();
-            document.querySelectorAll('[id^="p-"]').forEach(sel => {
-                names.forEach(n => sel.add(new Option(n, n)));
-            });
-            document.getElementById('memberList').innerHTML = names.join('<br>');
-        } catch (e) {
-            document.getElementById('status').innerHTML = "Connection Failed";
+async function load() {
+    // Make sure this is your NEWEST /exec URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwaqvaQziBa6uBn5WoIjK4t9a-5IqDpBfnmGt1rXh1AuycKfoNNMo6j7Qz5lLANvBd09Q/exec';
+    const statusDiv = document.getElementById('status');
+    
+    try {
+        // We use a simple GET request. 
+        // Do NOT add headers like 'Content-Type': 'application/json' here.
+        const res = await fetch(API_URL, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+
+        if (!res.ok) throw new Error('Network response was not ok');
+
+        db = await res.json();
+        
+        if(db.error) {
+            statusDiv.innerHTML = "Sheet Error: " + db.error;
+            return;
         }
+
+        statusDiv.innerHTML = "Last Sync: " + db.lastUpdated;
+        renderUI();
+    } catch (e) {
+        console.error("Fetch error:", e);
+        statusDiv.innerHTML = "Connection Failed. Check URL permissions.";
     }
+}
 
     function updateShips(id) {
         const name = document.getElementById(`p-${id}`).value;
@@ -86,3 +97,4 @@
 </script>
 </body>
 </html>
+
