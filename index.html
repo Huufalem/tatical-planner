@@ -16,23 +16,19 @@
         #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
         
-        /* Winrate Colors */
         .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
         .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
         
         select { width: 100%; margin-bottom: 8px; padding: 8px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; }
-        
-        /* Badges */
         .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; }
         .radar { background: rgba(255, 77, 77, 0.15); color: #ff7b72; border: 1px solid #ff4d4d; }
         .hydro { background: rgba(56, 139, 253, 0.15); color: #a5d6ff; border: 1px solid #388bfd; }
         
-        /* Stats Grid */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
         .stat-card { background: #010409; padding: 8px 2px; border-radius: 4px; border: 1px solid var(--border); }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 2px; }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; }
         .stat-val { font-size: 14px; font-weight: bold; display: block; }
-        .btl-count { font-size: 10px; color: #8b949e; font-weight: normal; margin-top: 2px; } /* Lightened battle count */
+        .btl-count { font-size: 10px; color: #8b949e; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -46,17 +42,14 @@
         <div id="filters">
             <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
                 <option value="All">All Tiers</option>
-                <option value="Tier 10">Tier 10</option>
-                <option value="Tier 11">★ Tier</option>
-                <option value="Tier 9">Tier 9</option>
-                <option value="Tier 8">Tier 8</option>
+                <option value="10">Tier 10</option>
+                <option value="11">★ Tier</option>
             </select>
-            <select id="filter-class" onchange="applyFilters()" style="width:130px; margin:0">
+            <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0">
                 <option value="All">All Classes</option>
-                <option value="destroyer">Destroyer</option>
-                <option value="cruiser">Cruiser</option>
-                <option value="battleship">Battleship</option>
-                <option value="aircarrier">Carrier</option>
+                <option value="BB">BB (Battleship)</option>
+                <option value="CA">CA (Cruiser)</option>
+                <option value="DD">DD (Destroyer)</option>
             </select>
             <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
         </div>
@@ -90,7 +83,6 @@
         return 'wr-red';
     }
 
-    // Helper to prevent NaN
     function cleanNum(val) {
         let n = parseFloat(val);
         return isNaN(n) ? 0 : n;
@@ -103,10 +95,17 @@
             db.players = data.players; 
             db.library = {};
             
+            // MAP MASTERDASHBOARD: 0:Ship, 1:Tier, 2:Class, 3:Detect, 4:Speed, 5:Gun Range, 6:Torp Range, 7:Hydro, 8:Radar
             data.libraryRaw.slice(1).forEach(r => {
                 db.library[r[0]] = { 
-                    tier: r[1], type: r[2], detect: r[3], guns: r[4], 
-                    torps: r[5], radar: r[6], hydro: r[7], speed: r[8] 
+                    tier: String(r[1]), 
+                    type: r[2], 
+                    detect: r[3], 
+                    speed: r[4], 
+                    guns: r[5], 
+                    torps: r[6], 
+                    hydro: r[7], 
+                    radar: r[8] 
                 };
             });
             document.getElementById('status').innerText = "● LIVE DATA";
@@ -130,15 +129,15 @@
         const shipSel = document.getElementById(`s-${id}`);
         
         shipSel.innerHTML = '<option value="">Select Ship</option>';
-        if(name === "Select Player" || !name) return;
+        if(!name || name === "Select Player") return;
 
         db.players.filter(p => p[0] === name).forEach(p => {
             const shipName = p[1];
-            const shipInfo = db.library[shipName];
+            const info = db.library[shipName];
 
-            if (shipInfo) {
-                if (tierF !== "All" && shipInfo.tier !== tierF) return;
-                if (classF !== "All" && shipInfo.type.toLowerCase() !== classF.toLowerCase()) return;
+            if (info) {
+                if (tierF !== "All" && info.tier !== tierF) return;
+                if (classF !== "All" && info.type !== classF) return;
             }
 
             let rawWR = cleanNum(p[3]);
@@ -158,7 +157,6 @@
         const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
 
         if (p) {
-            // Mapping: D=3, H=7, L=11. Handle NaN by calling cleanNum.
             const ranWR = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
             const rnkWR = (cleanNum(p[7]) < 1 ? cleanNum(p[7]) * 100 : cleanNum(p[7])).toFixed(1);
             const clnWR = (cleanNum(p[11]) < 1 ? cleanNum(p[11]) * 100 : cleanNum(p[11])).toFixed(1);
@@ -181,8 +179,8 @@
                         </div>
                     </div>
                     <div style="margin-top:4px">
-                        ${info.radar && info.radar !== "No" ? `<span class="badge radar">📡 RADAR ${info.radar}</span>` : ''}
-                        ${info.hydro && info.hydro !== "No" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}</span>` : ''}
+                        ${info.radar && info.radar !== "--" ? `<span class="badge radar">📡 RADAR ${info.radar}km</span>` : ''}
+                        ${info.hydro && info.hydro !== "--" ? `<span class="badge hydro">🌊 HYDRO ${info.hydro}km</span>` : ''}
                     </div>
                 ` : ''}
             `;
@@ -193,11 +191,10 @@
     function calcGlobal() {
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
-            const shipName = document.getElementById(`s-${i}`).value;
-            const s = db.library[shipName];
+            const s = db.library[document.getElementById(`s-${i}`).value];
             if(s) { 
-                if(s.radar && s.radar !== "No") r++; 
-                if(s.hydro && s.hydro !== "No") h++; 
+                if(s.radar && s.radar !== "--") r++; 
+                if(s.hydro && s.hydro !== "--") h++; 
             }
         }
         document.getElementById('total-radar').innerText = r;
