@@ -11,7 +11,6 @@
         }
         body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         
-        /* Top Navigation */
         #header { background: #010409; border-bottom: 1px solid var(--border); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .global-search-container { position: relative; width: 400px; }
         .leaderboard-panel { 
@@ -26,7 +25,7 @@
         #filters { display: flex; gap: 10px; background: #010409; padding: 6px; border-radius: 8px; border: 1px solid var(--border); }
         #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         
-        /* Slot Styling */
+        /* Slot Styling (from Reference) */
         .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
         select, .search-input { width: 100%; margin-bottom: 8px; padding: 10px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
         .search-container { position: relative; width: 100%; }
@@ -34,7 +33,7 @@
         .dropdown-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; }
         .dropdown-item:hover { background: #1f2937; }
 
-        /* Stats & Badges */
+        /* Stats & Badges (from Reference) */
         .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
         .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
         .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
@@ -45,15 +44,24 @@
         .stat-val { font-size: 14px; font-weight: bold; }
         .btl-count { font-size: 9px; color: #8b949e; line-height: 1.1; }
         .btl-main { color: #c9d1d9; border-top: 1px solid #21262d; margin-top: 4px; padding-top: 2px; font-weight: bold; }
-
-        /* Leaderboard Table */
-        .lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .lb-table th { text-align: left; color: #8b949e; padding: 5px; border-bottom: 1px solid var(--border); }
-        .lb-table td { padding: 8px 5px; border-bottom: 1px solid #21262d; }
-        .lb-rank { width: 20px; font-weight: bold; color: var(--accent); }
-
         .spec-item { display: flex; align-items: center; gap: 6px; color: #c9d1d9; font-size: 12px; }
         .spec-icon { width: 18px; height: 18px; opacity: 0.8; }
+
+        /* Heatmap Styles */
+        .hm-row-label { font-weight: bold; font-size: 12px; color: #8b949e; text-transform: uppercase; }
+        .hm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .hm-cell { height: 45px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .hm-cell.active { border-color: white; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .hm-red { background: #2d1616; color: var(--wr-red); }
+        .hm-yellow { background: #2d2616; color: var(--wr-yellow); }
+        .hm-green { background: #162d16; color: var(--wr-green); }
+        .hm-purple { background: #22162d; color: var(--wr-purple); }
+        
+        /* New Grouped Player Cards (Bottom) */
+        .player-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .ship-line { border-top: 1px solid #21262d; padding-top: 8px; margin-top: 4px; cursor: pointer; padding: 6px; border-radius: 4px; }
+        .ship-line:hover { background: rgba(88, 166, 255, 0.1); }
+        .mini-stat { font-size: 11px; color: #8b949e; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -61,7 +69,7 @@
 <div id="header">
     <div style="font-weight: bold; font-size: 18px; color: var(--accent);">TACTICAL PLANNER</div>
     <div class="global-search-container">
-        <input type="text" id="global-ship-search" class="search-input" style="margin:0" placeholder="🔍 Search Ship Leaderboard (e.g. Des Moines)..." oninput="showLeaderboard()">
+        <input type="text" id="global-ship-search" class="search-input" style="margin:0" placeholder="🔍 Search Library..." oninput="showLeaderboard()">
         <div id="lb-panel" class="leaderboard-panel"></div>
     </div>
     <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
@@ -75,48 +83,33 @@
             <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png" style="width:18px"> Hydro: <b id="total-hydro" style="color:#33ff33">0</b></span>
         </div>
         <div id="filters">
-            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Tiers</option><script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);</script><option value="11">★ Tier</option></select>
-            <select id="filter-class" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Classes</option><option value="BB">BB</option><option value="CA">CA</option><option value="DD">DD</option></select>
-            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
+            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Tiers</option><option value="8">Tier 8</option><option value="9">Tier 9</option><option value="10">Tier 10</option><option value="11">★ Tier</option></select>
+            <button onclick="clearHeatmapSelection()" style="background:#30363d; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">Clear Map</button>
         </div>
     </div>
+    
     <div id="board"></div>
+
+    <div style="padding: 25px; background: var(--bg-panel); border-top: 1px solid var(--border); margin-top: 30px;">
+        <h2 style="color: var(--accent); font-size: 16px; margin: 0 0 20px 0; letter-spacing: 1px;">FLEET READINESS HEATMAP</h2>
+        <div id="heatmap-container" style="display: grid; grid-template-columns: 120px 1fr; gap: 15px; align-items: center;"></div>
+        <div id="heatmap-details-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 25px;"></div>
+    </div>
 </div>
 
 <script>
     let db = { players: [], library: {} };
+    let selectedCells = new Set();
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
-    // Initialize Slots
-    const board = document.getElementById('board');
-    for(let i=1; i<=7; i++){
-        board.innerHTML += `
-            <div class="slot">
-                <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
-                <div class="search-container">
-                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="clearAndShowPlayers(${i})" oninput="filterPlayers(${i})" autocomplete="off">
-                    <div id="p-drop-${i}" class="custom-dropdown"></div>
-                </div>
-                <div class="search-container">
-                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="clearAndShowShips(${i})" oninput="filterShips(${i})" autocomplete="off">
-                    <div id="s-drop-${i}" class="custom-dropdown"></div>
-                </div>
-                <div id="stats-${i}"></div>
-            </div>
-        `;
-    }
-
-    async function load() {
-        try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            db.players = data.players;
-            data.libraryRaw.slice(1).forEach(r => {
-                db.library[r[0]] = { tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] };
-            });
-            document.getElementById('status').innerText = "● LIVE DATA";
-        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
-    }
+    const icons = {
+        radar: "https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png",
+        hydro: "https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png",
+        guns: "https://wiki.wgcdn.co/images/2/24/Module_wows_artillery.png",
+        torps: "https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png",
+        engine: "https://wiki.wgcdn.co/images/a/aa/Module_wows_engine.png",
+        detect: "https://wiki.wgcdn.co/images/f/f2/Icon_surface_detect_16.png"
+    };
 
     function normalize(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
     function cleanNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
@@ -126,106 +119,52 @@
         return 'wr-red';
     }
 
-    // Global Ship Leaderboard Logic
-    function showLeaderboard() {
-        const input = document.getElementById('global-ship-search');
-        const panel = document.getElementById('lb-panel');
-        const val = normalize(input.value);
-        if (val.length < 2) { panel.style.display = 'none'; return; }
-
-        // Find matches for ship names
-        const allShipNames = Object.keys(db.library);
-        const shipMatch = allShipNames.find(name => normalize(name) === val || normalize(name).includes(val));
-
-        if (!shipMatch) {
-            panel.innerHTML = `<div style="padding:10px; font-size:12px; color:#8b949e">No ship found...</div>`;
-            panel.style.display = 'block';
-            return;
-        }
-
-        // Get all players who played this ship, sort by Clan WR (index 11), then Random WR (index 3)
-        let topPlayers = db.players.filter(p => p[1] === shipMatch).map(p => {
-            let clanWR = cleanNum(p[11]) < 1 ? cleanNum(p[11])*100 : cleanNum(p[11]);
-            let randWR = cleanNum(p[3]) < 1 ? cleanNum(p[3])*100 : cleanNum(p[3]);
-            return { name: p[0], clanWR, clanBtls: cleanNum(p[10]), randWR, randBtls: cleanNum(p[2]) };
-        });
-
-        topPlayers.sort((a, b) => (b.clanWR || b.randWR) - (a.clanWR || a.randWR));
-
-        panel.innerHTML = `
-            <div style="font-size:14px; font-weight:bold; margin-bottom:10px; color:white; border-bottom:1px solid #30363d; padding-bottom:5px">${shipMatch} Top Specialists</div>
-            <table class="lb-table">
-                <thead><tr><th>#</th><th>Player</th><th>Clan WR</th><th>Btls</th><th>Rand WR</th></tr></thead>
-                <tbody>
-                    ${topPlayers.slice(0, 10).map((p, idx) => `
-                        <tr>
-                            <td class="lb-rank">${idx + 1}</td>
-                            <td style="font-weight:bold">${p.name}</td>
-                            <td class="${getWRClass(p.clanWR)}">${p.clanWR.toFixed(1)}%</td>
-                            <td style="color:#8b949e">${p.clanBtls}</td>
-                            <td class="${getWRClass(p.randWR)}">${p.randWR.toFixed(1)}%</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-        panel.style.display = 'block';
+    // Init Board
+    const board = document.getElementById('board');
+    for(let i=1; i<=7; i++){
+        board.innerHTML += `
+            <div class="slot">
+                <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
+                <div class="search-container">
+                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="this.value=''" oninput="filterPlayers(${i})" autocomplete="off">
+                    <div id="p-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="this.value=''" oninput="filterShips(${i})" autocomplete="off">
+                    <div id="s-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div id="stats-${i}"></div>
+            </div>`;
     }
 
-    // Slot Controls
-    function clearAndShowPlayers(id) { document.getElementById(`p-${id}`).value = ""; document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterPlayers(id); calcGlobal(); }
-    function clearAndShowShips(id) { document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterShips(id); calcGlobal(); }
-
-    function filterPlayers(id) {
-        const input = document.getElementById(`p-${id}`);
-        const drop = document.getElementById(`p-drop-${id}`);
-        const val = normalize(input.value);
-        const names = [...new Set(db.players.slice(1).map(p => p[0]))].sort();
-        const matches = names.filter(n => normalize(n).includes(val));
-        drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
-        drop.style.display = 'block';
+    async function load() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            db.players = data.players;
+            data.libraryRaw.slice(1).forEach(r => {
+                db.library[r[0]] = { tier: String(r[1]), type: r[2], detect: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] };
+            });
+            document.getElementById('status').innerText = "● LIVE DATA";
+            generateHeatmap();
+        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
     }
 
-    function selectPlayer(id, name) { document.getElementById(`p-${id}`).value = name; document.getElementById(`p-drop-${id}`).style.display = 'none'; }
-
-    function filterShips(id) {
-        const playerName = document.getElementById(`p-${id}`).value;
-        const input = document.getElementById(`s-${id}`);
-        const drop = document.getElementById(`s-drop-${id}`);
-        const tF = document.getElementById('filter-tier').value;
-        const cF = document.getElementById('filter-class').value;
-        const val = normalize(input.value);
-        if (!playerName) return;
-        const matches = db.players.filter(p => p[0] === playerName).filter(p => {
-            const info = db.library[p[1]];
-            if (!info || !normalize(p[1]).includes(val)) return false;
-            if (tF !== "All" && (tF === "11" ? (info.tier !== "11" && info.tier !== "★") : info.tier !== tF)) return false;
-            if (cF !== "All" && info.type !== cF) return false;
-            return true;
-        });
-        drop.innerHTML = matches.map(p => {
-            let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
-            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')"><span>${p[1]}</span><span class="${getWRClass(wr)}">${wr}%</span></div>`;
-        }).join('');
-        drop.style.display = 'block';
-    }
-
-    function selectShip(id, shipName) { document.getElementById(`s-${id}`).value = shipName; document.getElementById(`s-drop-${id}`).style.display = 'none'; showStats(id); }
-
-    function applyFilters() { for(let i=1; i<=7; i++) { if(document.getElementById(`s-${i}`).value) showStats(i); } }
-
+    // POSITION CARD STATS (Detailed 3-Column View)
     function showStats(id) {
         const shipName = document.getElementById(`s-${id}`).value;
         const playerName = document.getElementById(`p-${id}`).value;
         const display = document.getElementById(`stats-${id}`);
         const info = db.library[shipName];
-        const p = db.players.slice(1).find(x => x[0] === playerName && x[1] === shipName);
+        const p = db.players.find(x => x[0] === playerName && x[1] === shipName);
+        
         if (p && info) {
             const fmt = (idx, pct) => {
                 let v = cleanNum(p[idx]); if (pct) { v = v < 1 ? v * 100 : v; return v.toFixed(1) + '%'; }
                 return Math.round(v).toLocaleString();
             };
             const valid = (v) => v && v !== "--" && v !== "0" && v !== "No";
+
             display.innerHTML = `
                 <div class="stat-grid">
                     <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(fmt(3,true))}">${fmt(3,true)}</span><div class="btl-count">${fmt(4,false)} Dmg</div><div class="btl-count btl-main">${fmt(2,false)} Btls</div></div>
@@ -233,19 +172,131 @@
                     <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(fmt(11,true))}">${fmt(11,true)}</span><div class="btl-count">${fmt(12,false)} Dmg</div><div class="btl-count btl-main">${fmt(10,false)} Btls</div></div>
                 </div>
                 <div style="font-size:11px; margin-top:12px; padding-top:8px; border-top:1px solid #30363d; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/a/aa/Module_wows_engine.png"> <b>${info.speed}kn</b></div>
-                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/2/24/Module_wows_artillery.png"> <b>${info.guns}km</b></div>
-                    ${valid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png"> <b>${info.torps}km</b></div>` : ''}
+                    <div class="spec-item"><img class="spec-icon" src="${icons.detect}" style="filter:invert(1)"> <b>${info.detect}km</b></div>
+                    <div class="spec-item"><img class="spec-icon" src="${icons.guns}"> <b>${info.guns}km</b></div>
+                    ${valid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="${icons.torps}"> <b>${info.torps}km</b></div>` : ''}
                 </div>
                 <div style="margin-top:5px">
-                    ${valid(info.radar) ? `<span class="badge" style="color:#58a6ff; border-color:#388bfd"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"> ${info.radar}km</span>` : ''}
-                    ${valid(info.hydro) ? `<span class="badge" style="color:#33ff33; border-color:#33ff33"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"> ${info.hydro}km</span>` : ''}
+                    ${valid(info.radar) ? `<span class="badge" style="color:#58a6ff; border-color:#388bfd"><img src="${icons.radar}"> ${info.radar}km</span>` : ''}
+                    ${valid(info.hydro) ? `<span class="badge" style="color:#33ff33; border-color:#33ff33"><img src="${icons.hydro}"> ${info.hydro}km</span>` : ''}
                 </div>
             `;
         }
         calcGlobal();
     }
 
+    // HEATMAP PLAYER CARDS (Compact Scout View)
+    function updateSpecialistList() {
+        const grid = document.getElementById('heatmap-details-grid');
+        const tF = document.getElementById('filter-tier').value;
+        if (selectedCells.size === 0) { grid.innerHTML = ""; return; }
+
+        let matches = [];
+        selectedCells.forEach(key => {
+            const [cls, min, max] = key.split('|');
+            matches = matches.concat(db.players.filter(p => {
+                const info = db.library[p[1]];
+                if (!info || info.type !== cls) return false;
+                if (tF !== "All" && (tF === "11" ? (info.tier !== "11" && info.tier !== "★") : info.tier !== tF)) return false;
+                let wr = cleanNum(p[3]); if (wr < 1) wr *= 100;
+                return wr >= parseFloat(min) && wr <= parseFloat(max);
+            }));
+        });
+
+        const grouped = {};
+        matches.forEach(p => { if(!grouped[p[0]]) grouped[p[0]] = []; if(!grouped[p[0]].some(s=>s[1]===p[1])) grouped[p[0]].push(p); });
+
+        grid.innerHTML = Object.keys(grouped).sort().map(name => {
+            const pShips = grouped[name].sort((a,b) => cleanNum(b[3]) - cleanNum(a[3]));
+            return `
+                <div class="player-card">
+                    <div style="font-weight:bold; color:var(--accent); font-size:14px; border-bottom:1px solid #21262d; padding-bottom:5px;">${name}</div>
+                    ${pShips.map(p => {
+                        const info = db.library[p[1]];
+                        const wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3])*100 : cleanNum(p[3])).toFixed(1);
+                        const valid = (v) => v && v !== "--" && v !== "0" && v !== "No";
+                        return `
+                        <div class="ship-line" onclick="autoFillNext('${name}', '${p[1]}')">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="font-size:12px; font-weight:bold; color:white;">${p[1]}</span>
+                                <span class="${getWRClass(wr)}" style="font-size:11px; font-weight:bold;">${wr}%</span>
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                                <div class="mini-stat"><img src="${icons.guns}" style="width:12px"> ${info.guns}k</div>
+                                ${valid(info.torps) ? `<div class="mini-stat"><img src="${icons.torps}" style="width:12px"> ${info.torps}k</div>` : ''}
+                                <div class="mini-stat"><img src="${icons.detect}" style="width:12px; filter:invert(1)"> ${info.detect}k</div>
+                                ${valid(info.radar) ? `<div class="mini-stat" style="color:#58a6ff"><img src="${icons.radar}" style="width:12px"> ${info.radar}k</div>` : ''}
+                                ${valid(info.hydro) ? `<div class="mini-stat" style="color:#33ff33"><img src="${icons.hydro}" style="width:12px"> ${info.hydro}k</div>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+        }).join('');
+    }
+
+    // Helper functions
+    function toggleCell(cls, min, max) {
+        const key = `${cls}|${min}|${max}`;
+        if (selectedCells.has(key)) selectedCells.delete(key); else selectedCells.add(key);
+        generateHeatmap();
+    }
+    function clearHeatmapSelection() { selectedCells.clear(); generateHeatmap(); }
+    function autoFillNext(player, ship) {
+        for(let i=1; i<=7; i++) {
+            if(!document.getElementById(`p-${i}`).value) {
+                document.getElementById(`p-${i}`).value = player;
+                document.getElementById(`s-${i}`).value = ship;
+                showStats(i); return;
+            }
+        }
+    }
+    function generateHeatmap() {
+        const container = document.getElementById('heatmap-container');
+        const tF = document.getElementById('filter-tier').value;
+        const classes = ['DD', 'CA', 'BB'];
+        const brackets = [{label:'<48%', class:'hm-red', min:0, max:47.9}, {label:'48-52%', class:'hm-yellow', min:48, max:50.9}, {label:'51-55%', class:'hm-green', min:51, max:54.9}, {label:'55%+', class:'hm-purple', min:55, max:100}];
+        let html = '';
+        classes.forEach(cls => {
+            html += `<div class="hm-row-label">${cls}</div><div class="hm-grid">`;
+            brackets.forEach(brk => {
+                const key = `${cls}|${brk.min}|${brk.max}`;
+                const isActive = selectedCells.has(key) ? 'active' : '';
+                const count = [...new Set(db.players.filter(p => {
+                    const info = db.library[p[1]];
+                    if (!info || info.type !== cls) return false;
+                    if (tF !== "All" && (tF === "11" ? (info.tier !== "11" && info.tier !== "★") : info.tier !== tF)) return false;
+                    let wr = cleanNum(p[3]); if (wr < 1) wr *= 100;
+                    return wr >= brk.min && wr <= brk.max;
+                }).map(m => m[0]))].length;
+                html += `<div class="hm-cell ${brk.class} ${isActive}" onclick="toggleCell('${cls}', ${brk.min}, ${brk.max})"><span class="hm-count">${count}</span></div>`;
+            });
+            html += `</div>`;
+        });
+        container.innerHTML = html;
+        updateSpecialistList();
+    }
+
+    function filterPlayers(id) {
+        const drop = document.getElementById(`p-drop-${id}`);
+        const val = normalize(document.getElementById(`p-${id}`).value);
+        const names = [...new Set(db.players.map(p => p[0]))].filter(n => normalize(n).includes(val)).sort();
+        drop.innerHTML = names.slice(0, 10).map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n}')">${n}</div>`).join('');
+        drop.style.display = 'block';
+    }
+    function selectPlayer(id, name) { document.getElementById(`p-${id}`).value = name; document.getElementById(`p-drop-${id}`).style.display = 'none'; }
+    function filterShips(id) {
+        const playerName = document.getElementById(`p-${id}`).value;
+        const drop = document.getElementById(`s-drop-${id}`);
+        const tF = document.getElementById('filter-tier').value;
+        const val = normalize(document.getElementById(`s-${id}`).value);
+        const matches = db.players.filter(p => p[0] === playerName && normalize(p[1]).includes(val) && (tF === "All" || db.library[p[1]].tier === tF));
+        drop.innerHTML = matches.map(p => {
+            let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
+            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1]}')"><span>${p[1]}</span><span class="${getWRClass(wr)}">${wr}%</span></div>`;
+        }).join('');
+        drop.style.display = 'block';
+    }
+    function selectShip(id, shipName) { document.getElementById(`s-${id}`).value = shipName; document.getElementById(`s-drop-${id}`).style.display = 'none'; showStats(id); }
     function calcGlobal() {
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
@@ -256,12 +307,7 @@
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
     }
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-container') && !e.target.closest('.global-search-container')) {
-            document.querySelectorAll('.custom-dropdown, .leaderboard-panel').forEach(d => d.style.display = 'none');
-        }
-    });
+    function applyFilters() { for(let i=1; i<=7; i++) { if(document.getElementById(`s-${i}`).value) showStats(i); } generateHeatmap(); }
 
     load();
 </script>
