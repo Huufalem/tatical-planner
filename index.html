@@ -2,185 +2,268 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Clan Tactical Whiteboard</title>
+    <title>Clan Tactical Planner</title>
     <style>
-        :root { --bg: #0d1117; --panel: #161b22; --accent: #58a6ff; --text: #c9d1d9; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root {
+            --bg-dark: #0d1117; --bg-panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --accent: #58a6ff;
+            --wr-red: #ff4d4d; --wr-yellow: #ffcc00; --wr-green: #33ff33; --wr-purple: #bf00ff;
+        }
+        body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         
-        /* Sidebar Controls */
-        #sidebar { width: 280px; background: var(--panel); border-right: 1px solid #30363d; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .tool-group { border-bottom: 1px solid #30363d; padding-bottom: 15px; }
-        h3 { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: var(--accent); }
-        
-        select, button { width: 100%; padding: 10px; background: #0d1117; color: white; border: 1px solid #30363d; border-radius: 4px; cursor: pointer; }
-        button:hover { border-color: var(--accent); }
+        /* Top Navigation */
+        #header { background: #010409; border-bottom: 1px solid var(--border); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .global-search-container { position: relative; width: 400px; }
+        .leaderboard-panel { 
+            position: absolute; top: 45px; left: 0; right: 0; 
+            background: var(--bg-panel); border: 1px solid var(--accent); 
+            border-radius: 8px; max-height: 400px; overflow-y: auto; display: none; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); padding: 10px;
+        }
 
-        /* Draggable Icons */
-        .icon-palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .drag-icon { width: 50px; height: 50px; background: #21262d; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: grab; border: 1px solid transparent; }
-        .drag-icon:hover { border-color: var(--accent); }
-        .drag-icon img { width: 30px; height: 30px; pointer-events: none; }
-
-        /* Map Area */
-        #canvas-container { flex: 1; position: relative; background: #010409; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        canvas { border: 2px solid #30363d; background-size: cover; cursor: crosshair; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        #main { flex: 1; overflow-y: auto; }
+        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; }
+        #filters { display: flex; gap: 10px; background: #010409; padding: 6px; border-radius: 8px; border: 1px solid var(--border); }
+        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
         
-        .floating-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; }
-        .btn-action { background: var(--accent); color: black; font-weight: bold; padding: 8px 15px; border-radius: 20px; border: none; }
+        /* Slot Styling */
+        .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
+        select, .search-input { width: 100%; margin-bottom: 8px; padding: 10px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .search-container { position: relative; width: 100%; }
+        .custom-dropdown { position: absolute; top: 42px; left: 0; right: 0; background: #0d1117; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; z-index: 99; display: none; border-radius: 4px; }
+        .dropdown-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; }
+        .dropdown-item:hover { background: #1f2937; }
+
+        /* Stats & Badges */
+        .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
+        .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .badge img { width: 18px; height: 18px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
+        .stat-card { background: #010409; padding: 8px 2px; border-radius: 4px; border: 1px solid var(--border); min-height: 85px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-label { font-size: 9px; text-transform: uppercase; color: #8b949e; }
+        .stat-val { font-size: 14px; font-weight: bold; }
+        .btl-count { font-size: 9px; color: #8b949e; line-height: 1.1; }
+        .btl-main { color: #c9d1d9; border-top: 1px solid #21262d; margin-top: 4px; padding-top: 2px; font-weight: bold; }
+
+        /* Leaderboard Table */
+        .lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .lb-table th { text-align: left; color: #8b949e; padding: 5px; border-bottom: 1px solid var(--border); }
+        .lb-table td { padding: 8px 5px; border-bottom: 1px solid #21262d; }
+        .lb-rank { width: 20px; font-weight: bold; color: var(--accent); }
+
+        .spec-item { display: flex; align-items: center; gap: 6px; color: #c9d1d9; font-size: 12px; }
+        .spec-icon { width: 18px; height: 18px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <div class="tool-group">
-        <h3>1. Select Map</h3>
-        <select id="map-select" onchange="changeMap()">
-            <option value="https://wiki.wargaming.net/en/Ship:Maps#/media/File:Land_of_Fire.jpg">Land of Fire</option>
-            <option value="https://wiki.wargaming.net/en/Ship:Maps#/media/File:Sleeping_Giant.jpg">Sleeping Giant</option>
-            <option value="https://wiki.wargaming.net/en/Ship:Maps#/media/File:Crash_Zone_Alpha.jpg">Crash Zone Alpha</option>
-            <option value="https://wiki.wargaming.net/en/Ship:Maps#/media/File:North.jpg">North</option>
-        </select>
+<div id="header">
+    <div style="font-weight: bold; font-size: 18px; color: var(--accent);">TACTICAL PLANNER</div>
+    <div class="global-search-container">
+        <input type="text" id="global-ship-search" class="search-input" style="margin:0" placeholder="🔍 Search Ship Leaderboard (e.g. Des Moines)..." oninput="showLeaderboard()">
+        <div id="lb-panel" class="leaderboard-panel"></div>
     </div>
-
-    <div class="tool-group">
-        <h3>2. Deploy Fleet</h3>
-        <small style="color:#8b949e">Drag icons onto the map:</small><br><br>
-        <div class="icon-palette">
-            <div class="drag-icon" draggable="true" ondragstart="drag(event, 'BB')"><img src="https://wiki.wgcdn.co/images/0/03/Ship_icon_Battleship.png"></div>
-            <div class="drag-icon" draggable="true" ondragstart="drag(event, 'CA')"><img src="https://wiki.wgcdn.co/images/6/61/Ship_icon_Cruiser.png"></div>
-            <div class="drag-icon" draggable="true" ondragstart="drag(event, 'DD')"><img src="https://wiki.wgcdn.co/images/4/4b/Ship_icon_Destroyer.png"></div>
-            <div class="drag-icon" draggable="true" ondragstart="drag(event, 'Radar')"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"></div>
-            <div class="drag-icon" draggable="true" ondragstart="drag(event, 'Hydro')"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"></div>
-        </div>
-    </div>
-
-    <div class="tool-group">
-        <h3>3. Drawing Tools</h3>
-        <button onclick="setTool('draw')" id="btn-draw">✏️ Draw Path</button>
-        <button onclick="setTool('move')" id="btn-move" style="margin-top:5px; background:#238636">✋ Move Icons</button>
-        <button onclick="clearCanvas()" style="margin-top:20px; color: #ff7b72">🗑️ Clear All</button>
-    </div>
+    <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
 </div>
 
-<div id="canvas-container" ondrop="drop(event)" ondragover="allowDrop(event)">
-    <canvas id="mapCanvas" width="800" height="800"></canvas>
-    <div class="floating-controls">
-        <button class="btn-action" onclick="downloadMap()">Save Image</button>
+<div id="main">
+    <div id="top-bar">
+        <div style="font-size:13px; color:#8b949e; display:flex; align-items:center; gap:15px">
+            Fleet Utility: 
+            <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png" style="width:18px"> Radar: <b id="total-radar" style="color:#58a6ff">0</b></span> 
+            <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png" style="width:18px"> Hydro: <b id="total-hydro" style="color:#33ff33">0</b></span>
+        </div>
+        <div id="filters">
+            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Tiers</option><script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);</script><option value="11">★ Tier</option></select>
+            <select id="filter-class" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Classes</option><option value="BB">BB</option><option value="CA">CA</option><option value="DD">DD</option></select>
+            <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
+        </div>
     </div>
+    <div id="board"></div>
 </div>
 
 <script>
-    const canvas = document.getElementById('mapCanvas');
-    const ctx = canvas.getContext('2d');
-    let mapImage = new Image();
-    let icons = []; // Stores placed icons: {x, y, type, img}
-    let isDrawing = false;
-    let currentTool = 'move';
-    let draggedIconIdx = null;
+    let db = { players: [], library: {} };
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
-    // Load initial map
-    function changeMap() {
-        // Note: Using placeholders since direct wiki links can sometimes CORS block
-        // In a real app, you'd host these map JPGs locally.
-        const url = document.getElementById('map-select').value;
-        mapImage.src = 'https://wowsp-wows-na.wgcdn.co/dcont/fb/image/t_maps_01.jpg'; // Default placeholder
-        mapImage.onload = draw;
+    // Initialize Slots
+    const board = document.getElementById('board');
+    for(let i=1; i<=7; i++){
+        board.innerHTML += `
+            <div class="slot">
+                <div style="margin-bottom:8px"><small style="color:#8b949e; font-weight:bold; letter-spacing:1px">POSITION ${i}</small></div>
+                <div class="search-container">
+                    <input type="text" id="p-${i}" class="search-input" placeholder="Select Player..." onfocus="clearAndShowPlayers(${i})" oninput="filterPlayers(${i})" autocomplete="off">
+                    <div id="p-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="s-${i}" class="search-input" placeholder="Select Ship..." onfocus="clearAndShowShips(${i})" oninput="filterShips(${i})" autocomplete="off">
+                    <div id="s-drop-${i}" class="custom-dropdown"></div>
+                </div>
+                <div id="stats-${i}"></div>
+            </div>
+        `;
     }
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
-        
-        // Draw Icons
-        icons.forEach(icon => {
-            const img = new Image();
-            img.src = getIconUrl(icon.type);
-            ctx.drawImage(img, icon.x - 20, icon.y - 20, 40, 40);
+    async function load() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            db.players = data.players;
+            data.libraryRaw.slice(1).forEach(r => {
+                db.library[r[0]] = { tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] };
+            });
+            document.getElementById('status').innerText = "● LIVE DATA";
+        } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
+    }
+
+    function normalize(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+    function cleanNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
+    function getWRClass(wr) {
+        let n = parseFloat(wr);
+        if (n >= 55) return 'wr-purple'; if (n >= 51) return 'wr-green'; if (n >= 46) return 'wr-yellow';
+        return 'wr-red';
+    }
+
+    // Global Ship Leaderboard Logic
+    function showLeaderboard() {
+        const input = document.getElementById('global-ship-search');
+        const panel = document.getElementById('lb-panel');
+        const val = normalize(input.value);
+        if (val.length < 2) { panel.style.display = 'none'; return; }
+
+        // Find matches for ship names
+        const allShipNames = Object.keys(db.library);
+        const shipMatch = allShipNames.find(name => normalize(name) === val || normalize(name).includes(val));
+
+        if (!shipMatch) {
+            panel.innerHTML = `<div style="padding:10px; font-size:12px; color:#8b949e">No ship found...</div>`;
+            panel.style.display = 'block';
+            return;
+        }
+
+        // Get all players who played this ship, sort by Clan WR (index 11), then Random WR (index 3)
+        let topPlayers = db.players.filter(p => p[1] === shipMatch).map(p => {
+            let clanWR = cleanNum(p[11]) < 1 ? cleanNum(p[11])*100 : cleanNum(p[11]);
+            let randWR = cleanNum(p[3]) < 1 ? cleanNum(p[3])*100 : cleanNum(p[3]);
+            return { name: p[0], clanWR, clanBtls: cleanNum(p[10]), randWR, randBtls: cleanNum(p[2]) };
         });
+
+        topPlayers.sort((a, b) => (b.clanWR || b.randWR) - (a.clanWR || a.randWR));
+
+        panel.innerHTML = `
+            <div style="font-size:14px; font-weight:bold; margin-bottom:10px; color:white; border-bottom:1px solid #30363d; padding-bottom:5px">${shipMatch} Top Specialists</div>
+            <table class="lb-table">
+                <thead><tr><th>#</th><th>Player</th><th>Clan WR</th><th>Btls</th><th>Rand WR</th></tr></thead>
+                <tbody>
+                    ${topPlayers.slice(0, 10).map((p, idx) => `
+                        <tr>
+                            <td class="lb-rank">${idx + 1}</td>
+                            <td style="font-weight:bold">${p.name}</td>
+                            <td class="${getWRClass(p.clanWR)}">${p.clanWR.toFixed(1)}%</td>
+                            <td style="color:#8b949e">${p.clanBtls}</td>
+                            <td class="${getWRClass(p.randWR)}">${p.randWR.toFixed(1)}%</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        panel.style.display = 'block';
     }
 
-    function getIconUrl(type) {
-        const urls = {
-            'BB': 'https://wiki.wgcdn.co/images/0/03/Ship_icon_Battleship.png',
-            'CA': 'https://wiki.wgcdn.co/images/6/61/Ship_icon_Cruiser.png',
-            'DD': 'https://wiki.wgcdn.co/images/4/4b/Ship_icon_Destroyer.png',
-            'Radar': 'https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png',
-            'Hydro': 'https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png'
-        };
-        return urls[type];
+    // Slot Controls
+    function clearAndShowPlayers(id) { document.getElementById(`p-${id}`).value = ""; document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterPlayers(id); calcGlobal(); }
+    function clearAndShowShips(id) { document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterShips(id); calcGlobal(); }
+
+    function filterPlayers(id) {
+        const input = document.getElementById(`p-${id}`);
+        const drop = document.getElementById(`p-drop-${id}`);
+        const val = normalize(input.value);
+        const names = [...new Set(db.players.slice(1).map(p => p[0]))].sort();
+        const matches = names.filter(n => normalize(n).includes(val));
+        drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
+        drop.style.display = 'block';
     }
 
-    // Drag and Drop logic
-    function allowDrop(e) { e.preventDefault(); }
-    function drag(e, type) { e.dataTransfer.setData("type", type); }
-    
-    function drop(e) {
-        e.preventDefault();
-        const type = e.dataTransfer.getData("type");
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        icons.push({ x, y, type });
-        draw();
+    function selectPlayer(id, name) { document.getElementById(`p-${id}`).value = name; document.getElementById(`p-drop-${id}`).style.display = 'none'; }
+
+    function filterShips(id) {
+        const playerName = document.getElementById(`p-${id}`).value;
+        const input = document.getElementById(`s-${id}`);
+        const drop = document.getElementById(`s-drop-${id}`);
+        const tF = document.getElementById('filter-tier').value;
+        const cF = document.getElementById('filter-class').value;
+        const val = normalize(input.value);
+        if (!playerName) return;
+        const matches = db.players.filter(p => p[0] === playerName).filter(p => {
+            const info = db.library[p[1]];
+            if (!info || !normalize(p[1]).includes(val)) return false;
+            if (tF !== "All" && (tF === "11" ? (info.tier !== "11" && info.tier !== "★") : info.tier !== tF)) return false;
+            if (cF !== "All" && info.type !== cF) return false;
+            return true;
+        });
+        drop.innerHTML = matches.map(p => {
+            let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
+            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')"><span>${p[1]}</span><span class="${getWRClass(wr)}">${wr}%</span></div>`;
+        }).join('');
+        drop.style.display = 'block';
     }
 
-    // Drawing lines logic
-    canvas.onmousedown = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    function selectShip(id, shipName) { document.getElementById(`s-${id}`).value = shipName; document.getElementById(`s-drop-${id}`).style.display = 'none'; showStats(id); }
 
-        if (currentTool === 'draw') {
-            isDrawing = true;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.strokeStyle = '#58a6ff';
-            ctx.lineWidth = 3;
-        } else {
-            // Check if clicking an icon to move it
-            draggedIconIdx = icons.findIndex(i => Math.hypot(i.x - x, i.y - y) < 20);
+    function applyFilters() { for(let i=1; i<=7; i++) { if(document.getElementById(`s-${i}`).value) showStats(i); } }
+
+    function showStats(id) {
+        const shipName = document.getElementById(`s-${id}`).value;
+        const playerName = document.getElementById(`p-${id}`).value;
+        const display = document.getElementById(`stats-${id}`);
+        const info = db.library[shipName];
+        const p = db.players.slice(1).find(x => x[0] === playerName && x[1] === shipName);
+        if (p && info) {
+            const fmt = (idx, pct) => {
+                let v = cleanNum(p[idx]); if (pct) { v = v < 1 ? v * 100 : v; return v.toFixed(1) + '%'; }
+                return Math.round(v).toLocaleString();
+            };
+            const valid = (v) => v && v !== "--" && v !== "0" && v !== "No";
+            display.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(fmt(3,true))}">${fmt(3,true)}</span><div class="btl-count">${fmt(4,false)} Dmg</div><div class="btl-count btl-main">${fmt(2,false)} Btls</div></div>
+                    <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(fmt(7,true))}">${fmt(7,true)}</span><div class="btl-count">${fmt(8,false)} Dmg</div><div class="btl-count btl-main">${fmt(6,false)} Btls</div></div>
+                    <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(fmt(11,true))}">${fmt(11,true)}</span><div class="btl-count">${fmt(12,false)} Dmg</div><div class="btl-count btl-main">${fmt(10,false)} Btls</div></div>
+                </div>
+                <div style="font-size:11px; margin-top:12px; padding-top:8px; border-top:1px solid #30363d; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/a/aa/Module_wows_engine.png"> <b>${info.speed}kn</b></div>
+                    <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/2/24/Module_wows_artillery.png"> <b>${info.guns}km</b></div>
+                    ${valid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png"> <b>${info.torps}km</b></div>` : ''}
+                </div>
+                <div style="margin-top:5px">
+                    ${valid(info.radar) ? `<span class="badge" style="color:#58a6ff; border-color:#388bfd"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"> ${info.radar}km</span>` : ''}
+                    ${valid(info.hydro) ? `<span class="badge" style="color:#33ff33; border-color:#33ff33"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"> ${info.hydro}km</span>` : ''}
+                </div>
+            `;
         }
-    };
+        calcGlobal();
+    }
 
-    canvas.onmousemove = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        if (isDrawing && currentTool === 'draw') {
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        } else if (draggedIconIdx !== null) {
-            icons[draggedIconIdx].x = x;
-            icons[draggedIconIdx].y = y;
-            draw();
+    function calcGlobal() {
+        let r = 0, h = 0;
+        for(let i=1; i<=7; i++) {
+            const s = db.library[document.getElementById(`s-${i}`).value];
+            if(s && s.radar && s.radar !== "No" && s.radar !== "0") r++;
+            if(s && s.hydro && s.hydro !== "No" && s.hydro !== "0") h++;
         }
-    };
-
-    canvas.onmouseup = () => {
-        isDrawing = false;
-        draggedIconIdx = null;
-    };
-
-    function setTool(tool) {
-        currentTool = tool;
-        document.getElementById('btn-draw').style.background = tool === 'draw' ? '#58a6ff' : '#0d1117';
-        document.getElementById('btn-move').style.background = tool === 'move' ? '#238636' : '#0d1117';
+        document.getElementById('total-radar').innerText = r;
+        document.getElementById('total-hydro').innerText = h;
     }
 
-    function clearCanvas() {
-        icons = [];
-        draw();
-    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container') && !e.target.closest('.global-search-container')) {
+            document.querySelectorAll('.custom-dropdown, .leaderboard-panel').forEach(d => d.style.display = 'none');
+        }
+    });
 
-    function downloadMap() {
-        const link = document.createElement('a');
-        link.download = 'tactics-plan.png';
-        link.href = canvas.toDataURL();
-        link.click();
-    }
-
-    changeMap();
+    load();
 </script>
 </body>
 </html>
