@@ -9,71 +9,74 @@
             --text: #c9d1d9; --accent: #58a6ff;
             --wr-red: #ff4d4d; --wr-yellow: #ffcc00; --wr-green: #33ff33; --wr-purple: #bf00ff;
         }
-        body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
-        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-        #filters { display: flex; gap: 10px; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
-        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
-        .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; position: relative; }
+        body { background: var(--bg-dark); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         
+        /* Top Navigation */
+        #header { background: #010409; border-bottom: 1px solid var(--border); padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .global-search-container { position: relative; width: 400px; }
+        .leaderboard-panel { 
+            position: absolute; top: 45px; left: 0; right: 0; 
+            background: var(--bg-panel); border: 1px solid var(--accent); 
+            border-radius: 8px; max-height: 400px; overflow-y: auto; display: none; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); padding: 10px;
+        }
+
+        #main { flex: 1; overflow-y: auto; }
+        #top-bar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; }
+        #filters { display: flex; gap: 10px; background: #010409; padding: 6px; border-radius: 8px; border: 1px solid var(--border); }
+        #board { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+        
+        /* Slot Styling */
+        .slot { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
+        select, .search-input { width: 100%; margin-bottom: 8px; padding: 10px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .search-container { position: relative; width: 100%; }
+        .custom-dropdown { position: absolute; top: 42px; left: 0; right: 0; background: #0d1117; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; z-index: 99; display: none; border-radius: 4px; }
+        .dropdown-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; }
+        .dropdown-item:hover { background: #1f2937; }
+
+        /* Stats & Badges */
         .wr-red { color: var(--wr-red); } .wr-yellow { color: var(--wr-yellow); } 
         .wr-green { color: var(--wr-green); } .wr-purple { color: var(--wr-purple); }
-        
-        select, .search-input { width: 100%; margin-bottom: 8px; padding: 10px; background: #0d1117; color: white; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
-        
-        .search-container { position: relative; width: 100%; }
-        .custom-dropdown {
-            position: absolute;
-            top: 42px; left: 0; right: 0;
-            background: #0d1117; border: 1px solid var(--border);
-            max-height: 250px; overflow-y: auto; z-index: 9999;
-            display: none; border-radius: 4px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.6);
-        }
-        .dropdown-item { padding: 10px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #21262d; }
-        .dropdown-item:hover { background: #1f2937; }
-        
-        .badge { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 8px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .badge img { width: 22px; height: 22px; }
-        .radar-bg { background: rgba(56, 139, 253, 0.1); color: #58a6ff; border-color: #388bfd; }
-        .hydro-bg { background: rgba(51, 255, 51, 0.1); color: #33ff33; border-color: #33ff33; }
-        
-        /* Stats Grid */
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .badge img { width: 18px; height: 18px; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; text-align: center; }
-        .stat-card { background: #010409; padding: 8px 2px; border-radius: 4px; border: 1px solid var(--border); min-height: 90px; display: flex; flex-direction: column; justify-content: space-between; }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #8b949e; display: block; }
-        .stat-val { font-size: 15px; font-weight: bold; display: block; margin: 2px 0; }
-        .btl-count { font-size: 9px; color: #8b949e; line-height: 1.2; }
-        .btl-main { color: #c9d1d9; font-weight: bold; border-top: 1px solid #21262d; margin-top: 4px; padding-top: 2px; }
+        .stat-card { background: #010409; padding: 8px 2px; border-radius: 4px; border: 1px solid var(--border); min-height: 85px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-label { font-size: 9px; text-transform: uppercase; color: #8b949e; }
+        .stat-val { font-size: 14px; font-weight: bold; }
+        .btl-count { font-size: 9px; color: #8b949e; line-height: 1.1; }
+        .btl-main { color: #c9d1d9; border-top: 1px solid #21262d; margin-top: 4px; padding-top: 2px; font-weight: bold; }
 
-        .spec-item { display: flex; align-items: center; gap: 8px; color: #c9d1d9; font-size: 13px; }
-        .spec-icon { width: 20px; height: 20px; filter: brightness(0.9); }
+        /* Leaderboard Table */
+        .lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .lb-table th { text-align: left; color: #8b949e; padding: 5px; border-bottom: 1px solid var(--border); }
+        .lb-table td { padding: 8px 5px; border-bottom: 1px solid #21262d; }
+        .lb-rank { width: 20px; font-weight: bold; color: var(--accent); }
+
+        .spec-item { display: flex; align-items: center; gap: 6px; color: #c9d1d9; font-size: 12px; }
+        .spec-icon { width: 18px; height: 18px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
+<div id="header">
+    <div style="font-weight: bold; font-size: 18px; color: var(--accent);">TACTICAL PLANNER</div>
+    <div class="global-search-container">
+        <input type="text" id="global-ship-search" class="search-input" style="margin:0" placeholder="🔍 Search Ship Leaderboard (e.g. Des Moines)..." oninput="showLeaderboard()">
+        <div id="lb-panel" class="leaderboard-panel"></div>
+    </div>
+    <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
+</div>
+
 <div id="main">
     <div id="top-bar">
-        <div style="display:flex; gap:25px; align-items:center">
-            <div id="status" style="font-size:12px; color:var(--accent); font-weight:bold">Syncing...</div>
-            <div style="font-size:13px; color:#8b949e; display:flex; align-items:center; gap:15px">
-                Fleet Utility: 
-                <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png" style="width:20px"> Radar: <b id="total-radar" style="color:#58a6ff">0</b></span> 
-                <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png" style="width:20px"> Hydro: <b id="total-hydro" style="color:#33ff33">0</b></span>
-            </div>
+        <div style="font-size:13px; color:#8b949e; display:flex; align-items:center; gap:15px">
+            Fleet Utility: 
+            <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png" style="width:18px"> Radar: <b id="total-radar" style="color:#58a6ff">0</b></span> 
+            <span style="color:white; display:flex; align-items:center; gap:5px"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png" style="width:18px"> Hydro: <b id="total-hydro" style="color:#33ff33">0</b></span>
         </div>
         <div id="filters">
-            <select id="filter-tier" onchange="applyFilters()" style="width:110px; margin:0">
-                <option value="All">All Tiers</option>
-                <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);</script>
-                <option value="11">★ Tier</option>
-            </select>
-            <select id="filter-class" onchange="applyFilters()" style="width:110px; margin:0">
-                <option value="All">All Classes</option>
-                <option value="BB">BB</option>
-                <option value="CA">CA</option>
-                <option value="DD">DD</option>
-            </select>
+            <select id="filter-tier" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Tiers</option><script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">Tier ${i}</option>`);</script><option value="11">★ Tier</option></select>
+            <select id="filter-class" onchange="applyFilters()" style="width:100px; margin:0"><option value="All">All Classes</option><option value="BB">BB</option><option value="CA">CA</option><option value="DD">DD</option></select>
             <button onclick="location.reload()" style="background:#238636; color:white; border:0; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:bold">Refresh</button>
         </div>
     </div>
@@ -81,9 +84,10 @@
 </div>
 
 <script>
-    let db = {};
+    let db = { players: [], library: {} };
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-VW-dgBwLQ1LUUT35OU38melYwWTATGAZ32Q-WhOxgPVIsiCqNnA92NrV_f0qDdz_MQ/exec';
 
+    // Initialize Slots
     const board = document.getElementById('board');
     for(let i=1; i<=7; i++){
         board.innerHTML += `
@@ -102,19 +106,11 @@
         `;
     }
 
-    function normalize(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-    function getWRClass(wr) {
-        let n = parseFloat(wr);
-        if (n >= 55) return 'wr-purple'; if (n >= 51) return 'wr-green'; if (n >= 46) return 'wr-yellow';
-        return 'wr-red';
-    }
-    function cleanNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
-
     async function load() {
         try {
-            const res = await fetch(API_URL, { method: 'GET', mode: 'cors', redirect: 'follow' });
+            const res = await fetch(API_URL);
             const data = await res.json();
-            db.players = data.players; db.library = {};
+            db.players = data.players;
             data.libraryRaw.slice(1).forEach(r => {
                 db.library[r[0]] = { tier: String(r[1]), type: r[2], speed: r[3], guns: r[4], torps: r[5], hydro: r[6], radar: r[7] };
             });
@@ -122,14 +118,63 @@
         } catch (e) { document.getElementById('status').innerText = "● OFFLINE"; }
     }
 
-    function clearAndShowPlayers(id) {
-        document.getElementById(`p-${id}`).value = ""; document.getElementById(`s-${id}`).value = "";
-        document.getElementById(`stats-${id}`).innerHTML = ""; filterPlayers(id); calcGlobal();
+    function normalize(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+    function cleanNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
+    function getWRClass(wr) {
+        let n = parseFloat(wr);
+        if (n >= 55) return 'wr-purple'; if (n >= 51) return 'wr-green'; if (n >= 46) return 'wr-yellow';
+        return 'wr-red';
     }
-    function clearAndShowShips(id) {
-        document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = "";
-        filterShips(id); calcGlobal();
+
+    // Global Ship Leaderboard Logic
+    function showLeaderboard() {
+        const input = document.getElementById('global-ship-search');
+        const panel = document.getElementById('lb-panel');
+        const val = normalize(input.value);
+        if (val.length < 2) { panel.style.display = 'none'; return; }
+
+        // Find matches for ship names
+        const allShipNames = Object.keys(db.library);
+        const shipMatch = allShipNames.find(name => normalize(name) === val || normalize(name).includes(val));
+
+        if (!shipMatch) {
+            panel.innerHTML = `<div style="padding:10px; font-size:12px; color:#8b949e">No ship found...</div>`;
+            panel.style.display = 'block';
+            return;
+        }
+
+        // Get all players who played this ship, sort by Clan WR (index 11), then Random WR (index 3)
+        let topPlayers = db.players.filter(p => p[1] === shipMatch).map(p => {
+            let clanWR = cleanNum(p[11]) < 1 ? cleanNum(p[11])*100 : cleanNum(p[11]);
+            let randWR = cleanNum(p[3]) < 1 ? cleanNum(p[3])*100 : cleanNum(p[3]);
+            return { name: p[0], clanWR, clanBtls: cleanNum(p[10]), randWR, randBtls: cleanNum(p[2]) };
+        });
+
+        topPlayers.sort((a, b) => (b.clanWR || b.randWR) - (a.clanWR || a.randWR));
+
+        panel.innerHTML = `
+            <div style="font-size:14px; font-weight:bold; margin-bottom:10px; color:white; border-bottom:1px solid #30363d; padding-bottom:5px">${shipMatch} Top Specialists</div>
+            <table class="lb-table">
+                <thead><tr><th>#</th><th>Player</th><th>Clan WR</th><th>Btls</th><th>Rand WR</th></tr></thead>
+                <tbody>
+                    ${topPlayers.slice(0, 10).map((p, idx) => `
+                        <tr>
+                            <td class="lb-rank">${idx + 1}</td>
+                            <td style="font-weight:bold">${p.name}</td>
+                            <td class="${getWRClass(p.clanWR)}">${p.clanWR.toFixed(1)}%</td>
+                            <td style="color:#8b949e">${p.clanBtls}</td>
+                            <td class="${getWRClass(p.randWR)}">${p.randWR.toFixed(1)}%</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        panel.style.display = 'block';
     }
+
+    // Slot Controls
+    function clearAndShowPlayers(id) { document.getElementById(`p-${id}`).value = ""; document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterPlayers(id); calcGlobal(); }
+    function clearAndShowShips(id) { document.getElementById(`s-${id}`).value = ""; document.getElementById(`stats-${id}`).innerHTML = ""; filterShips(id); calcGlobal(); }
 
     function filterPlayers(id) {
         const input = document.getElementById(`p-${id}`);
@@ -140,32 +185,31 @@
         drop.innerHTML = matches.map(n => `<div class="dropdown-item" onclick="selectPlayer(${id}, '${n.replace(/'/g, "\\'")}')">${n}</div>`).join('');
         drop.style.display = 'block';
     }
+
     function selectPlayer(id, name) { document.getElementById(`p-${id}`).value = name; document.getElementById(`p-drop-${id}`).style.display = 'none'; }
 
     function filterShips(id) {
         const playerName = document.getElementById(`p-${id}`).value;
         const input = document.getElementById(`s-${id}`);
         const drop = document.getElementById(`s-drop-${id}`);
-        const tierF = document.getElementById('filter-tier').value;
-        const classF = document.getElementById('filter-class').value;
+        const tF = document.getElementById('filter-tier').value;
+        const cF = document.getElementById('filter-class').value;
         const val = normalize(input.value);
-        if (!playerName) { drop.style.display = 'none'; return; }
+        if (!playerName) return;
         const matches = db.players.filter(p => p[0] === playerName).filter(p => {
             const info = db.library[p[1]];
-            if (!info) return false; if (!normalize(p[1]).includes(val)) return false;
-            if (tierF !== "All") {
-                if (tierF === "11") { if (info.tier !== "11" && info.tier !== "★") return false; }
-                else if (info.tier !== tierF) return false;
-            }
-            if (classF !== "All" && info.type !== classF) return false;
+            if (!info || !normalize(p[1]).includes(val)) return false;
+            if (tF !== "All" && (tF === "11" ? (info.tier !== "11" && info.tier !== "★") : info.tier !== tF)) return false;
+            if (cF !== "All" && info.type !== cF) return false;
             return true;
         });
         drop.innerHTML = matches.map(p => {
             let wr = (cleanNum(p[3]) < 1 ? cleanNum(p[3]) * 100 : cleanNum(p[3])).toFixed(1);
-            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')"><span>${p[1]}</span><span class="wr-tag ${getWRClass(wr)}">${wr}%</span></div>`;
+            return `<div class="dropdown-item" onclick="selectShip(${id}, '${p[1].replace(/'/g, "\\'")}')"><span>${p[1]}</span><span class="${getWRClass(wr)}">${wr}%</span></div>`;
         }).join('');
         drop.style.display = 'block';
     }
+
     function selectShip(id, shipName) { document.getElementById(`s-${id}`).value = shipName; document.getElementById(`s-drop-${id}`).style.display = 'none'; showStats(id); }
 
     function applyFilters() { for(let i=1; i<=7; i++) { if(document.getElementById(`s-${i}`).value) showStats(i); } }
@@ -177,44 +221,25 @@
         const info = db.library[shipName];
         const p = db.players.slice(1).find(x => x[0] === playerName && x[1] === shipName);
         if (p && info) {
-            const fmt = (idx, pct, dec) => {
+            const fmt = (idx, pct) => {
                 let v = cleanNum(p[idx]); if (pct) { v = v < 1 ? v * 100 : v; return v.toFixed(1) + '%'; }
-                return dec === 0 ? Math.round(v).toLocaleString() : v.toFixed(dec);
+                return Math.round(v).toLocaleString();
             };
-            const isValid = (v) => v && v !== "--" && v !== "0" && v !== 0 && v !== "No";
-            
+            const valid = (v) => v && v !== "--" && v !== "0" && v !== "No";
             display.innerHTML = `
                 <div class="stat-grid">
-                    <div class="stat-card">
-                        <span class="stat-label">Random</span>
-                        <span class="stat-val ${getWRClass(fmt(3,true,1))}">${fmt(3,true,1)}</span>
-                        <div class="btl-count">${fmt(4,false,0)} Dmg</div>
-                        <div class="btl-count">${fmt(5,false,1)} Frag</div>
-                        <div class="btl-count btl-main">${fmt(2,false,0)} Btls</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Ranked</span>
-                        <span class="stat-val ${getWRClass(fmt(7,true,1))}">${fmt(7,true,1)}</span>
-                        <div class="btl-count">${fmt(8,false,0)} Dmg</div>
-                        <div class="btl-count">${fmt(9,false,1)} Frag</div>
-                        <div class="btl-count btl-main">${fmt(6,false,0)} Btls</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Clan</span>
-                        <span class="stat-val ${getWRClass(fmt(11,true,1))}">${fmt(11,true,1)}</span>
-                        <div class="btl-count">${fmt(12,false,0)} Dmg</div>
-                        <div class="btl-count">${fmt(13,false,1)} Frag</div>
-                        <div class="btl-count btl-main">${fmt(10,false,0)} Btls</div>
-                    </div>
+                    <div class="stat-card"><span class="stat-label">Random</span><span class="stat-val ${getWRClass(fmt(3,true))}">${fmt(3,true)}</span><div class="btl-count">${fmt(4,false)} Dmg</div><div class="btl-count btl-main">${fmt(2,false)} Btls</div></div>
+                    <div class="stat-card"><span class="stat-label">Ranked</span><span class="stat-val ${getWRClass(fmt(7,true))}">${fmt(7,true)}</span><div class="btl-count">${fmt(8,false)} Dmg</div><div class="btl-count btl-main">${fmt(6,false)} Btls</div></div>
+                    <div class="stat-card"><span class="stat-label">Clan</span><span class="stat-val ${getWRClass(fmt(11,true))}">${fmt(11,true)}</span><div class="btl-count">${fmt(12,false)} Dmg</div><div class="btl-count btl-main">${fmt(10,false)} Btls</div></div>
                 </div>
-                <div style="font-size:11px; margin-top:12px; padding-top:8px; border-top:1px solid #30363d; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div style="font-size:11px; margin-top:12px; padding-top:8px; border-top:1px solid #30363d; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                     <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/a/aa/Module_wows_engine.png"> <b>${info.speed}kn</b></div>
                     <div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/2/24/Module_wows_artillery.png"> <b>${info.guns}km</b></div>
-                    ${isValid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png"> <b>${info.torps}km</b></div>` : ''}
+                    ${valid(info.torps) ? `<div class="spec-item"><img class="spec-icon" src="https://wiki.wgcdn.co/images/4/47/Module_wows_torpedoes.png"> <b>${info.torps}km</b></div>` : ''}
                 </div>
-                <div style="margin-top:8px">
-                    ${isValid(info.radar) ? `<span class="badge radar-bg"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"> RADAR ${info.radar}km</span>` : ''}
-                    ${isValid(info.hydro) ? `<span class="badge hydro-bg"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"> HYDRO ${info.hydro}km</span>` : ''}
+                <div style="margin-top:5px">
+                    ${valid(info.radar) ? `<span class="badge" style="color:#58a6ff; border-color:#388bfd"><img src="https://wiki.wgcdn.co/images/f/f0/Consumable_PCY020_RlsSearchPremium.png"> ${info.radar}km</span>` : ''}
+                    ${valid(info.hydro) ? `<span class="badge" style="color:#33ff33; border-color:#33ff33"><img src="https://wiki.wgcdn.co/images/a/a9/Consumable_PCY016_SonarSearchPremium.png"> ${info.hydro}km</span>` : ''}
                 </div>
             `;
         }
@@ -225,13 +250,19 @@
         let r = 0, h = 0;
         for(let i=1; i<=7; i++) {
             const s = db.library[document.getElementById(`s-${i}`).value];
-            if(s) { if(isValidConst(s.radar)) r++; if(isValidConst(s.hydro)) h++; }
+            if(s && s.radar && s.radar !== "No" && s.radar !== "0") r++;
+            if(s && s.hydro && s.hydro !== "No" && s.hydro !== "0") h++;
         }
         document.getElementById('total-radar').innerText = r;
         document.getElementById('total-hydro').innerText = h;
     }
-    function isValidConst(v) { return v && v !== "--" && v !== "0" && v !== 0 && v !== "No"; }
-    document.addEventListener('click', (e) => { if (!e.target.classList.contains('search-input')) { document.querySelectorAll('.custom-dropdown').forEach(d => d.style.display = 'none'); } });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container') && !e.target.closest('.global-search-container')) {
+            document.querySelectorAll('.custom-dropdown, .leaderboard-panel').forEach(d => d.style.display = 'none');
+        }
+    });
+
     load();
 </script>
 </body>
